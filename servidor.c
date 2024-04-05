@@ -13,6 +13,7 @@
 #include "comm.h"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t file_mutex = PTHREAD_MUTEX_INITIALIZER;
 int mensaje_no_copiado = true;
 pthread_cond_t cond_mensaje = PTHREAD_COND_INITIALIZER;
 pthread_attr_t thread_attr;
@@ -27,12 +28,29 @@ void send_result(int sc, int res) {
     }
 }
 
+int get_client_address(int sc, char *address, size_t addr_size) {
+    // Get the address of the client
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
+    if (getpeername(sc, (struct sockaddr *)&addr, &addr_len) == -1) {
+        perror("Error getting client address");
+        return -1;
+    }
+    if (inet_ntop(AF_INET, &addr.sin_addr, address, addr_size) == NULL) {
+        perror("Error converting address to string");
+        return -1;
+    }
+    return 0;
+}
+
+
 void cleanup() {
     // Close server socket
     close(sd);
 
     // Destroy mutex, condition variable, and thread attributes
     pthread_mutex_destroy(&mutex);
+    pthread_mutex_destroy(&file_mutex);
     pthread_cond_destroy(&cond_mensaje);
     pthread_attr_destroy(&thread_attr);
 
@@ -62,17 +80,19 @@ void *tratar_peticion(void *sc_ptr) {
     if (ret < 0) {
         printf("Error en recepción op\n");
         //return -1;
-        exit(0);
+        pthread_exit(NULL);
     }
     printf("La operación es: %s\n",operation);
     int res = 0;
 
+    pthread_mutex_lock(&file_mutex);
     if (strcmp(operation, "REGISTER") == 0) {
         char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción REGISTER\n");
             send_result(sc, 2);
-            exit(0);
+            close(sc);
+            pthread_exit(NULL);
         }
         res = handle_register(username);
     }
@@ -81,10 +101,60 @@ void *tratar_peticion(void *sc_ptr) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción UNREGISTER\n");
             send_result(sc, 2);
-            exit(0);
+            close(sc);
+            pthread_exit(NULL);
         }
         res = handle_unregister(username);
     }
+    else if(strcmp(operation,"CONNECT") == 0){
+        char username[BUFFER_SIZE];
+        if (readLine(sc, username, BUFFER_SIZE) < 0) {
+            printf("Error en recepción CONNECT\n");
+            send_result(sc, 2);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        char port_str[BUFFER_SIZE];
+        if (readLine(sc, port_str, BUFFER_SIZE) < 0) {
+            printf("Error en recepción CONNECT\n");
+            send_result(sc, 2);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        char client_address[INET_ADDRSTRLEN]; // Assuming INET_ADDRSTRLEN is defined appropriately
+        if (get_client_address(sc, client_address, sizeof(client_address)) < 0) {
+            send_result(sc, 3);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        res = handle_connect(username, atoi(port_str), client_address);
+    }
+    else if(strcmp(operation,"PUBLISH") == 0){
+        char username[BUFFER_SIZE];
+        if (readLine(sc, username, BUFFER_SIZE) < 0) {
+            printf("Error en recepción PUBLISH\n");
+            send_result(sc, 2);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        char fileName[BUFFER_SIZE];
+        if (readLine(sc, fileName, BUFFER_SIZE) < 0) {
+            printf("Error en recepción PUBLISH\n");
+            send_result(sc, 2);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        char description[BUFFER_SIZE];
+        if (readLine(sc, description, BUFFER_SIZE) < 0) {
+            printf("Error en recepción PUBLISH\n");
+            send_result(sc, 2);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        res = handle_publish(username, fileName, description);
+
+    }
+    pthread_mutex_unlock(&file_mutex);
 
 
     /*
@@ -189,6 +259,7 @@ int main(int argc, char* argv[]) {
     pthread_attr_init(&thread_attr);
     pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
     pthread_mutex_init(&mutex, NULL);
+    pthread_mutex_init(&file_mutex, NULL);
     pthread_cond_init(&cond_mensaje, NULL);
 
     if (signal(SIGINT, signal_handler) == SIG_ERR) {
@@ -236,6 +307,7 @@ int main(int argc, char* argv[]) {
     close(sd);
 
     pthread_mutex_destroy(&mutex);
+    pthread_mutex_destroy(&file_mutex);
     pthread_cond_destroy(&cond_mensaje);
     pthread_attr_destroy(&thread_attr);
 

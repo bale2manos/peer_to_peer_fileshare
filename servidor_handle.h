@@ -3,14 +3,25 @@
 //
 
 #ifndef EX1_SERVIDOR_HANDLE_H
+#include <stdio.h>
 #define EX1_SERVIDOR_HANDLE_H
 #define DATA_DIRECTORY "./database/"
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 256
 #define MAX_FILEPATH_LENGTH 256
 
 int handle_register(char * username);
 
 int handle_unregister(char * username);
+
+void remove_files_in_directory(char* dirpath);
+
+int handle_connect(char* username, int port, char* address);
+
+int write_connection(const char *address, int port, FILE *file);
+
+int handle_publish(char* userName, char* fileName, char* description);
+
+int appendToFileJson(const char *userName, const char *fileName, const char *description);
 
 int handle_set_value(int key, char* value1, int N_value2, double* V_value2);
 

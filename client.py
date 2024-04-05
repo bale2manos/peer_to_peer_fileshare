@@ -1,6 +1,8 @@
 from enum import Enum
 import argparse
 import socket
+import threading
+
 
 class client :
 
@@ -26,6 +28,8 @@ class client :
             print("Connected to server: " + client._server + " on port: " + str(client._port))
         except Exception as e:
             print("Exception: " + str(e))
+            if client._sock:
+                client._sock.close()
             return client.RC.ERROR
 
     @staticmethod
@@ -53,6 +57,28 @@ class client :
         temp_socket.close()
 
         return free_port
+
+    @staticmethod
+    def listen_for_connections(listening_socket):
+        try:
+            listening_socket.listen(1)
+            print("Listening for incoming connections on port: " + str(listening_socket.getsockname()[1]))
+
+            # Accept incoming connections
+            connection, address = listening_socket.accept()
+            print("Connection received from: " + str(address))
+
+            # Receive data
+            data = connection.recv(1024)
+            print("Received data: " + data.decode())
+
+            # Close the connection
+            connection.close()
+            listening_socket.close() # TODO HAY QUE CERRARLO
+        except Exception as e:
+            if client._sock:
+                client._sock.close()
+            print("Exception: " + str(e))
 
 
     @staticmethod
@@ -82,6 +108,8 @@ class client :
             return client.RC(response)
         except Exception as e:
             print("Exception: " + str(e))
+            if client._sock:
+                client._sock.close()
             return client.RC.ERROR
 
 
@@ -112,12 +140,24 @@ class client :
             return client.RC(response)
         except Exception as e:
             print("Exception: " + str(e))
+            if client._sock:
+                client._sock.close()
             return client.RC.ERROR
 
 
     @staticmethod
     def connect(user):
         try:
+            # Obtain a free port
+            listening_port = client.get_free_port()
+
+            # Create a new socket
+            listening_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+            # Create a new thread to listen for incoming connections in that socket
+            listening_thread = threading.Thread(target=client.listen_for_connections, args=(listening_socket,))
+            listening_thread.start()
+
             # Establish a connection with the server
             client.connect_to_server()
 
@@ -127,11 +167,8 @@ class client :
             # Send user name
             client._sock.sendall(user.encode() + b'\0')
 
-            # Obtain a free port
-            listening_port = client.get_free_port()
-
             # Send listening port
-            client._sock.sendall(listening_port.encode() + b'\0')
+            client._sock.sendall(str(listening_port).encode() + b'\0')
 
             # Receive response
             response = int(client.readString())
@@ -149,10 +186,9 @@ class client :
             return client.RC(response)
         except Exception as e:
             print("Exception: " + str(e))
+            if client._sock:
+                client._sock.close()
             return client.RC.ERROR
-
-
-
 
     @staticmethod
     def  disconnect(user) :
@@ -160,9 +196,44 @@ class client :
         return client.RC.ERROR
 
     @staticmethod
-    def  publish(fileName,  description) :
-        #  Write your code here
-        return client.RC.ERROR
+    def  publish(userName, fileName,  description) :
+        if client.connect_to_server() == client.RC.ERROR:
+            print("Error connecting to server")
+            return client.RC.ERROR
+
+        try:
+            # Send PUBLISH command
+            client._sock.sendall(b'PUBLISH\0')
+
+            # Send userName
+            client._sock.sendall(userName.encode() + b'\0')
+
+            # Send fileName
+            client._sock.sendall(fileName.encode() + b'\0')
+
+            # Send description
+            client._sock.sendall(description.encode() + b'\0')
+
+            # Receive response
+            response = int(client.readString())
+
+            if response == client.RC.OK.value:
+                print("PUBLISH OK")
+            elif response == client.RC.ERROR.value:
+                print("PUBLISH FAIL USER, DOES NOT EXIST")
+            elif response == client.RC.USER_ERROR.value:
+                print("PUBLISH FAIL, USER NOT CONNECTED")
+            elif response == 3:
+                print("PUBLISH FAIL, CONTENT ALREADY PUBLISHED")
+            else:
+                print("PUBLISH FAIL")
+            client._sock.close()
+            return client.RC(response)
+        except Exception as e:
+            print("Exception: " + str(e))
+            if client._sock:
+                client._sock.close()
+            return client.RC.ERROR
 
     @staticmethod
     def  delete(fileName) :
@@ -217,12 +288,12 @@ class client :
                             print("Syntax error. Usage: CONNECT <userName>")
 
                     elif(line[0]=="PUBLISH") :
-                        if (len(line) >= 3) :
+                        if (len(line) >= 4) : # AÑADO POSIBILIDAD DE DECIR QUE USUARIO SUBE EL ARCHIVO
                             #  Remove first two words
-                            description = ' '.join(line[2:])
-                            client.publish(line[1], description)
+                            description = ' '.join(line[3:])
+                            client.publish(line[1], line[2], description)
                         else :
-                            print("Syntax error. Usage: PUBLISH <fileName> <description>")
+                            print("Syntax error. Usage: PUBLISH <userName> <fileName> <description>")
 
                     elif(line[0]=="DELETE") :
                         if (len(line) == 2) :
