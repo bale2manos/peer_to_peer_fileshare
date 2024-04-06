@@ -18,6 +18,7 @@ class client :
     _server = None
     _port = -1
     _sock = None
+    _username = None
     # ******************** METHODS *******************
 
     @staticmethod
@@ -148,6 +149,9 @@ class client :
     @staticmethod
     def connect(user):
         try:
+            #We store the name of the user in the client
+            client._username = user
+
             # Obtain a free port
             listening_port = client.get_free_port()
 
@@ -196,7 +200,7 @@ class client :
         return client.RC.ERROR
 
     @staticmethod
-    def  publish(userName, fileName,  description) :
+    def  publish(fileName,  description) :
         if client.connect_to_server() == client.RC.ERROR:
             print("Error connecting to server")
             return client.RC.ERROR
@@ -205,8 +209,8 @@ class client :
             # Send PUBLISH command
             client._sock.sendall(b'PUBLISH\0')
 
-            # Send userName
-            client._sock.sendall(userName.encode() + b'\0')
+            # Send userName from attribute
+            client._sock.sendall(client._username.encode() + b'\0')
 
             # Send fileName
             client._sock.sendall(fileName.encode() + b'\0')
@@ -237,8 +241,40 @@ class client :
 
     @staticmethod
     def  delete(fileName) :
-        #  Write your code here
-        return client.RC.ERROR
+        if client.connect_to_server() == client.RC.ERROR:
+            print("Error connecting to server")
+            return client.RC.ERROR
+
+        try:
+            # Send PUBLISH command
+            client._sock.sendall(b'DELETE\0')
+
+            # Send userName from attribute
+            client._sock.sendall(client._username.encode() + b'\0')
+
+            # Send fileName
+            client._sock.sendall(fileName.encode() + b'\0')
+
+            # Receive response
+            response = int(client.readString())
+
+            if response == client.RC.OK.value:
+                print("DELETE OK")
+            elif response == client.RC.ERROR.value:
+                print("DELETE FAIL, USER DOES NOT EXITS")
+            elif response == client.RC.USER_ERROR.value:
+                print("DELETE FAIL, USER NOT CONNECTED")
+            elif response == 3:
+                print("DELETE FAIL, CONTENT NOT PUBLISHED")
+            else:
+                print("DELETE FAIL")
+            client._sock.close()
+            return client.RC(response)
+        except Exception as e:
+            print("Exception: " + str(e))
+            if client._sock:
+                client._sock.close()
+            return client.RC.ERROR
 
     @staticmethod
     def  listusers() :
@@ -288,12 +324,12 @@ class client :
                             print("Syntax error. Usage: CONNECT <userName>")
 
                     elif(line[0]=="PUBLISH") :
-                        if (len(line) >= 4) : # AÑADO POSIBILIDAD DE DECIR QUE USUARIO SUBE EL ARCHIVO
+                        if (len(line) >= 3) :
                             #  Remove first two words
-                            description = ' '.join(line[3:])
-                            client.publish(line[1], line[2], description)
+                            description = ' '.join(line[2:])
+                            client.publish(line[1], description)
                         else :
-                            print("Syntax error. Usage: PUBLISH <userName> <fileName> <description>")
+                            print("Syntax error. Usage: PUBLISH <fileName> <description>")
 
                     elif(line[0]=="DELETE") :
                         if (len(line) == 2) :

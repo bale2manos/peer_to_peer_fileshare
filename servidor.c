@@ -127,7 +127,7 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
-        res = handle_connect(username, atoi(port_str), client_address);
+        res = handle_connect2(username, atoi(port_str), client_address);
     }
     else if(strcmp(operation,"PUBLISH") == 0){
         char username[BUFFER_SIZE];
@@ -151,8 +151,25 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
-        res = handle_publish(username, fileName, description);
+        res = handle_publish2(username, fileName, description);
 
+    }
+    else if(strcmp(operation, "DELETE") == 0){
+        char username[BUFFER_SIZE];
+        if (readLine(sc, username, BUFFER_SIZE) < 0) {
+            printf("Error en recepción PUBLISH\n");
+            send_result(sc, 2);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        char fileName[BUFFER_SIZE];
+        if (readLine(sc, fileName, BUFFER_SIZE) < 0) {
+            printf("Error en recepción PUBLISH\n");
+            send_result(sc, 2);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        res = handle_delete2(username,fileName);
     }
     pthread_mutex_unlock(&file_mutex);
 
