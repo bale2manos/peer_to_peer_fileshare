@@ -96,6 +96,115 @@ int handle_unregister(char* username) {
 
     return 0;
 }
+ int handle_connect2(char* username, int port, char* address) {
+     char user[MAX_FILEPATH_LENGTH];
+     snprintf(user, sizeof(user), "%s%s", DATA_DIRECTORY, username);
+
+     // If the directory doesn't exist, return an error, as the username does not exist
+     if (access(user, F_OK) == -1) {
+         perror("Error: user does not exist");
+         return 1;
+     }
+
+     char user_connect[MAX_FILEPATH_LENGTH];
+     snprintf(user_connect, sizeof(user_connect), "%s%s/connect", DATA_DIRECTORY, username);
+     // If the file does exist, return an error, as the user is already connected
+     if (access(user_connect, F_OK) == 0) {
+         perror("Error: user already connected");
+         return 2;
+     }
+
+     // Create the file of connection
+     FILE *file = fopen(user_connect, "w");
+     if (file == NULL) {
+         perror("Error opening file");
+         return 3;
+     }
+
+     // Write the address to the file
+     if (write_connection(address, port, file) != 0) {
+         return 3;
+     }
+
+     return 0;
+ }
+
+ int handle_publish2(char* userName, char* fileName, char* description){
+     char user[MAX_FILEPATH_LENGTH];
+     snprintf(user, sizeof(user), "%s%s", DATA_DIRECTORY, userName);
+
+     // If the directory doesn't exist, return an error, as the username does not exist
+     if (access(user, F_OK) == -1) {
+         perror("Error: user does not exist");
+         return 1;
+     }
+
+     char user_connect[MAX_FILEPATH_LENGTH];
+     snprintf(user_connect, sizeof(user_connect), "%s%s/connect", DATA_DIRECTORY, userName);
+
+     // If the file does not exist, return an error, as the user is not connected
+     if (access(user_connect, F_OK) == -1) {
+         perror("Error: user is not connected");
+         return 2;
+     }
+
+     // Construir la ruta para el nuevo archivo de texto
+     char new_file_path[2*MAX_FILEPATH_LENGTH];
+     snprintf(new_file_path, sizeof(new_file_path), "%s/%s", user, fileName);
+
+     // Abrir el archivo de texto para escribir el contenido
+     FILE *new_file = fopen(new_file_path, "w");
+     if (new_file == NULL) {
+         perror("Error creating new file");
+         return 3;
+     }
+
+     // Escribir la descripción en el archivo de texto
+     fprintf(new_file, "%s\n", description);
+
+     // Cerrar el archivo
+     fclose(new_file);
+
+     printf("Archivo creado exitosamente: %s\n", new_file_path);
+     return 0;
+
+
+ }
+
+ int handle_delete2(char* username, char* filename){
+     char user[MAX_FILEPATH_LENGTH];
+     snprintf(user, sizeof(user), "%s%s", DATA_DIRECTORY, username);
+
+     printf("la ruta es: %s",user);
+
+     // If the directory doesn't exist, return an error, as the username does not exist
+     if (access(user, F_OK) == -1) {
+         perror("Error: user does not exist");
+         return 1;
+     }
+     char user_connect[MAX_FILEPATH_LENGTH];
+     snprintf(user_connect, sizeof(user_connect), "%s%s/connect", DATA_DIRECTORY, username);
+
+     // If the file does not exist, return an error, as the user is not connected
+     if (access(user_connect, F_OK) == -1) {
+         perror("Error: user is not connected");
+         return 2;
+     }
+
+     // Construir la ruta completa del archivo a eliminar
+     char file_to_delete[2*MAX_FILEPATH_LENGTH];
+     snprintf(file_to_delete, sizeof(file_to_delete), "%s/%s", user, filename);
+
+     // Intentar eliminar el archivo
+     if (remove(file_to_delete) != 0) {
+         perror("Error deleting file");
+         return 3;
+     }
+
+     printf("Archivo '%s' eliminado correctamente.\n", filename);
+     return 0;
+
+ }
 
 int handle_connect(char* username, int port, char* address) {
     char user[MAX_FILEPATH_LENGTH];
@@ -284,7 +393,93 @@ int handle_publish(char* userName, char* fileName, char* description){
      return 0;
  }
 
+int handle_delete(char* username, char* filename){
+    char user[MAX_FILEPATH_LENGTH];
+    snprintf(user, sizeof(user), "%s%s", DATA_DIRECTORY, username);
 
+    printf("la ruta es: %s",user);
+
+    // If the directory doesn't exist, return an error, as the username does not exist
+    if (access(user, F_OK) == -1) {
+        perror("Error: user does not exist");
+        return 1;
+    }
+    char user_connect[MAX_FILEPATH_LENGTH];
+    snprintf(user_connect, sizeof(user_connect), "%s%s/connect", DATA_DIRECTORY, username);
+
+    // If the file does not exist, return an error, as the user is not connected
+    if (access(user_connect, F_OK) == -1) {
+        perror("Error: user is not connected");
+        return 2;
+    }
+    int res = removeFromFileJson(username, filename);
+    if (res == 1){
+        //El archivo no existe
+        return 3;
+    }
+    else if(res != 0){
+        return 4;
+    }
+    printf("File deleted successfully.\n");
+    return 0;
+}
+
+ int removeFromFileJson(const char *username, const char *filename){
+     char user_json[MAX_FILEPATH_LENGTH];
+     snprintf(user_json, sizeof(user_json), "%s%s/files.json", DATA_DIRECTORY, username);
+     FILE *file_json = fopen(user_json, "r+");
+     if (file_json == NULL) {
+         perror("Error opening json file");
+         return 4;
+     }
+     // Leer el contenido del archivo JSON en una cadena
+     fseek(file_json, 0, SEEK_END);
+     long file_size = ftell(file_json);
+     rewind(file_json);
+     char *json_content = (char *)malloc(file_size + 1);
+     if (json_content == NULL) {
+         fclose(file_json);
+         perror("Memory allocation failed");
+         return 5;
+     }
+     fread(json_content, 1, file_size, file_json);
+     json_content[file_size] = '\0'; // Null-terminate the string
+     fclose(file_json);
+
+     // Buscar el archivo en el JSON y eliminarlo
+     char *filename_start = strstr(json_content, filename);
+     if (filename_start == NULL) {
+         free(json_content);
+         printf("El archivo %s no encontrado en el JSON.\n", filename);
+         return 6;
+     }
+
+     // Buscar el inicio y el final del objeto del archivo
+     char *file_start = strrchr(filename_start, '{');
+     char *file_end = strchr(filename_start, '}');
+     if (file_start == NULL || file_end == NULL) {
+         free(json_content);
+         perror("Formato JSON inválido");
+         return 7;
+     }
+
+     // Mover el resto del JSON para llenar el espacio del archivo eliminado
+     memmove(file_start, file_end + 1, strlen(file_end + 1) + 1);
+
+     // Abrir el archivo JSON para escritura y sobreescribir con el nuevo JSON
+     file_json = fopen(user_json, "w");
+     if (file_json == NULL) {
+         free(json_content);
+         perror("Error opening json file");
+         return 8;
+     }
+     fprintf(file_json, "%s", json_content);
+     fclose(file_json);
+
+     free(json_content);
+     printf("Archivo %s eliminado correctamente.\n", filename);
+     return 0;
+}
 
 /*
 int handle_set_value(int key, char* value1, int N_value2, double* V_value2) {

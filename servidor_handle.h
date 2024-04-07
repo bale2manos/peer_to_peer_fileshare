@@ -21,6 +21,16 @@ int write_connection(const char *address, int port, FILE *file);
 
 int handle_publish(char* userName, char* fileName, char* description);
 
+int handle_publish2(char* userName, char* fileName, char* description);
+
+int handle_connect2(char* username, int port, char* address);
+
+int handle_delete2(char* username, char* filename);
+
+int handle_delete(char* username, char* filename);
+
+int removeFromFileJson(const char *userName, const char *fileName);
+
 int appendToFileJson(const char *userName, const char *fileName, const char *description);
 
 int handle_set_value(int key, char* value1, int N_value2, double* V_value2);
