@@ -8,14 +8,11 @@ TEST_EXECUTABLES = $(patsubst $(SRC_DIR)/%.c, $(SRC_DIR)/%, $(TEST_SOURCES))
 
 all: servidor libclaves.so cliente $(TEST_EXECUTABLES)
 
-servidor: servidor.o servidor_handle.o comm.o cJSON.o
+servidor: servidor.o servidor_handle.o comm.o
 	$(CC) $(CFLAGS) $^ -o $@
 
-libclaves.so: claves.o comm.o
+libclaves.so: comm.o
 	$(CC) -shared -o $@ $^
-
-cliente: cliente.o
-	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
 
 $(SRC_DIR)/%: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)

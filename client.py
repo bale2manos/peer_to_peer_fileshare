@@ -18,7 +18,14 @@ class client :
     _server = None
     _port = -1
     _sock = None
+    # _username is stored in the file in the same directory called current_username.txt
     _username = None
+    if _username is None:
+        try:
+            with open("current_username.txt", "r") as file:
+                _username = file.read()
+        except:
+            _username = None
     # ******************** METHODS *******************
 
     @staticmethod
@@ -41,7 +48,7 @@ class client :
             if (msg == b'\0'):
                 break
             a += msg.decode()
-            return a
+        return a
 
     @staticmethod
     def get_free_port():
@@ -151,6 +158,9 @@ class client :
         try:
             #We store the name of the user in the client
             client._username = user
+            with open("current_username.txt", "w") as file:
+                file.write(user)
+            # TODO logica y permisos de que usuario se conecta
 
             # Obtain a free port
             listening_port = client.get_free_port()
@@ -279,7 +289,40 @@ class client :
     @staticmethod
     def  listusers() :
         #  Write your code here
-        return client.RC.ERROR
+        if client.connect_to_server() == client.RC.ERROR:
+            print("Error connecting to server")
+            return client.RC.ERROR
+
+        try:
+            # Send REGISTER command
+            client._sock.sendall(b'LIST_USERS\0')
+
+            # Send username
+            client._sock.sendall(client._username.encode() + b'\0')
+
+            # Receive response
+            response = int(client.readString())
+
+            if response == client.RC.OK.value:
+                print("LIST_USERS OK")
+                n_connections = int(client.readString())
+                for connection in range(n_connections):
+                    print(client.readString())
+            elif response == client.RC.ERROR.value:
+                print("LIST_USERS FAIL, USER DOES NOT EXIST")
+            elif response == client.RC.USER_ERROR.value:
+                print("LIST_USERS FAIL, USER NOT CONNECTED")
+            else:
+                print("LIST_USERS FAIL")
+
+
+            client._sock.close()
+            return client.RC(response)
+        except Exception as e:
+            print("Exception: " + str(e))
+            if client._sock:
+                client._sock.close()
+            return client.RC.ERROR
 
     @staticmethod
     def  listcontent(user) :

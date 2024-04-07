@@ -32,7 +32,7 @@ int get_client_address(int sc, char *address, size_t addr_size) {
     // Get the address of the client
     struct sockaddr_in addr;
     socklen_t addr_len = sizeof(addr);
-    if (getpeername(sc, (struct sockaddr *)&addr, &addr_len) == -1) {
+    if (getpeername(sc, (struct sockaddr *) &addr, &addr_len) == -1) {
         perror("Error getting client address");
         return -1;
     }
@@ -72,6 +72,8 @@ void *tratar_peticion(void *sc_ptr) {
     pthread_cond_signal(&cond_mensaje);
     pthread_mutex_unlock(&mutex);
     ssize_t ret;
+    int n_users = 0;
+
 
     printf("Handling petition\n");
     printf("socket: %d\n", sc);
@@ -82,7 +84,7 @@ void *tratar_peticion(void *sc_ptr) {
         //return -1;
         pthread_exit(NULL);
     }
-    printf("La operación es: %s\n",operation);
+    printf("La operación es: %s\n", operation);
     int res = 0;
 
     pthread_mutex_lock(&file_mutex);
@@ -95,8 +97,7 @@ void *tratar_peticion(void *sc_ptr) {
             pthread_exit(NULL);
         }
         res = handle_register(username);
-    }
-    else if(strcmp(operation,"UNREGISTER") == 0){
+    } else if (strcmp(operation, "UNREGISTER") == 0) {
         char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción UNREGISTER\n");
@@ -105,8 +106,7 @@ void *tratar_peticion(void *sc_ptr) {
             pthread_exit(NULL);
         }
         res = handle_unregister(username);
-    }
-    else if(strcmp(operation,"CONNECT") == 0){
+    } else if (strcmp(operation, "CONNECT") == 0) {
         char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción CONNECT\n");
@@ -121,15 +121,14 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
-        char client_address[INET_ADDRSTRLEN]; // Assuming INET_ADDRSTRLEN is defined appropriately
+        char client_address[INET_ADDRSTRLEN];
         if (get_client_address(sc, client_address, sizeof(client_address)) < 0) {
             send_result(sc, 3);
             close(sc);
             pthread_exit(NULL);
         }
-        res = handle_connect2(username, atoi(port_str), client_address);
-    }
-    else if(strcmp(operation,"PUBLISH") == 0){
+        res = handle_connect(username, atoi(port_str), client_address);
+    } else if (strcmp(operation, "PUBLISH") == 0) {
         char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción PUBLISH\n");
@@ -151,10 +150,9 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
-        res = handle_publish2(username, fileName, description);
+        res = handle_publish(username, fileName, description);
 
-    }
-    else if(strcmp(operation, "DELETE") == 0){
+    } else if (strcmp(operation, "DELETE") == 0) {
         char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción PUBLISH\n");
@@ -169,106 +167,67 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
-        res = handle_delete2(username,fileName);
+        res = handle_delete(username, fileName);
+    } else if (strcmp(operation, "LIST_USERS") == 0) {
+        char username[BUFFER_SIZE];
+        if (readLine(sc, username, BUFFER_SIZE) < 0) {
+            printf("Error en recepción LIST_USERS\n");
+            send_result(sc, 2);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
+        FILE *user_list = fopen("users_connected.txt", "w");
+        if (user_list == NULL) {
+            perror("Error opening file");
+            send_result(sc, 2);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        res = handle_list_users(username, &n_users, user_list);
+        fclose(user_list);
     }
     pthread_mutex_unlock(&file_mutex);
 
 
-    /*
-    char key[BUFFER_SIZE];
-    int key_int;
-    char value1[BUFFER_SIZE];
-    char N_value2[BUFFER_SIZE];
-    int N_value2_int;
-    char element[BUFFER_SIZE];
-    double V_value2[MAX_VALUE2_LENGTH];
-
-    char get_value1[BUFFER_SIZE];
-    int get_N_value2;
-    double get_V_value2[MAX_VALUE2_LENGTH];
-    switch (operation_int) {
-        case INIT:
-            res = handle_init();
-            break;
-        case SET_VALUE:
-            if (readLine(sc, key, BUFFER_SIZE) < 0) {
-                printf("Error en recepción key\n");
-                //return -1;
-                exit(0);
-            }
-            key_int = atoi(key);
-            if (readLine(sc, value1, BUFFER_SIZE) < 0) {
-                printf("Error en recepción Value 1\n");
-                //return -1;
-                exit(0);
-            }
-            if (readLine(sc, N_value2, BUFFER_SIZE) < 0) {
-                printf("Error en recepción N_value2\n");
-                //return -1;
-                exit(0);
-            }
-            N_value2_int = atoi(N_value2);
-            for (int i = 0; i < N_value2_int; i++) {
-                if (readLine(sc, element, BUFFER_SIZE) < 0) {
-                    printf("Error en recepción V_value2\n");
-                    //return -1;
-                    exit(0);
-                }
-                V_value2[i] = strtod(element, NULL);
-            }
-            res = handle_set_value(key_int, value1, N_value2_int, V_value2);
-            break;
-        case GET_VALUE:
-            if (readLine(sc, key, BUFFER_SIZE) < 0) {
-                printf("Error en recepción key\n");
-                //return -1;
-                exit(0);
-            }
-            key_int = atoi(key);
-            res = handle_get_value(key_int, get_value1, &get_N_value2, get_V_value2);
-            break;
-        default:
-            fprintf(stderr, "Invalid operation\n");
-            break;
-        */
-    //Le mandamos el resultado al cliente.
     send_result(sc, res);
+    if (strcmp(operation, "LIST_USERS") == 0){
+        printf("Socket: %d\n", sc);
+        send_result(sc, n_users);
 
-    /*
-    if (operation_int == GET_VALUE){
-        //Mandar también los datos a recuperar
-        if (writeLine(sc, get_value1) < 0) {
-            perror("Error sending GET_VALUE message\n");
-            exit(0);
+        pthread_mutex_lock(&file_mutex);
+        FILE *user_list = fopen("users_connected.txt", "r");
+        printf("Sending users connected\n");
+        if (user_list == NULL) {
+            perror("Error opening file");
+            close(sc);
+            pthread_exit(NULL);
         }
-        char N_value2_str[BUFFER_SIZE];
-        sprintf(N_value2_str,"%d",get_N_value2);
-        if (writeLine(sc, N_value2_str) < 0) {
-            perror("Error sending GET_VALUE message\n");
-            exit(0);
-        }
-        for (int i = 0; i < get_N_value2; i++) {
-            char element_str[BUFFER_SIZE];
-            sprintf(element_str,"%f",get_V_value2[i]);
-            if (writeLine(sc, element_str) < 0) {
-                perror("Error sending GET_VALUE message\n");
-                exit(0);
+        char line[BUFFER_SIZE];
+        while (fgets(line, sizeof(line), user_list)) {
+            printf("Sending: %s\n", line);
+            if (writeLine(sc, line) < 0) {
+                perror("Error sending result\n");
+                pthread_exit(NULL);
             }
+        }
+        fclose(user_list);
+        pthread_mutex_unlock(&file_mutex);
+        // Delete file
+        if (remove("users_connected.txt") != 0) {
+            perror("Error deleting file");
+            close(sc);
+            pthread_exit(NULL);
         }
     }
-     */
-    // close socket
+
     close(sc);
     pthread_exit(0);
 }
 
 
-
-
-
-
-int main(int argc, char* argv[]) {
-    if (argc != 2){
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
         perror("usage ./servidor <port>");
     }
 
@@ -287,9 +246,9 @@ int main(int argc, char* argv[]) {
 
     int sc;
     int port = atoi(argv[1]);
-    sd = serverSocket(INADDR_ANY, port,SOCK_STREAM);
+    sd = serverSocket(INADDR_ANY, port, SOCK_STREAM);
     if (sd < 0) {
-        printf ("SERVER: Error en serverSocket\n");
+        printf("SERVER: Error en serverSocket\n");
         return 0;
     }
 
@@ -301,16 +260,15 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    while (1)
-    {
+    while (1) {
         // aceptar cliente
         if ((sc = serverAccept(sd)) < 0) {
             printf("Error en serverAccept\n");
-            continue ;
+            continue;
         }
 
         // procesar petición
-        if (pthread_create(&thid, &thread_attr,  tratar_peticion, &sc) != 0){
+        if (pthread_create(&thid, &thread_attr, tratar_peticion, &sc) != 0) {
             perror("Error creating thread");
             return -1;
         }
