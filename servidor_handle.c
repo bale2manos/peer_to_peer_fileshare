@@ -61,9 +61,20 @@ void remove_files_in_directory(char *dirpath) {
         if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
             continue; // Skip . and ..
         }
-        if (remove(filepath) != 0) {
-            printf("Error removing file %s\n", filepath);
-            perror("Error removing file");
+        if (entry->d_type == DT_DIR) {
+            // Recursively remove files in subdirectory
+            remove_files_in_directory(filepath);
+            // Remove the directory itself
+            if (rmdir(filepath) != 0) {
+                printf("Error removing directory %s\n", filepath);
+                perror("Error removing directory");
+            }
+        } else {
+            // Remove regular file
+            if (remove(filepath) != 0) {
+                printf("Error removing file %s\n", filepath);
+                perror("Error removing file");
+            }
         }
     }
 
@@ -241,7 +252,7 @@ int write_connection(const char *address, int port, FILE *file) {
     return 0;
 }
 
-int handle_list_users(char* username, int* n_connections, FILE* user_list) {
+int handle_list_users(char *username, int *n_connections, FILE *user_list) {
     char user[MAX_FILEPATH_LENGTH];
     snprintf(user, sizeof(user), "%s%s", DATA_DIRECTORY, username);
 
@@ -273,7 +284,7 @@ int handle_list_users(char* username, int* n_connections, FILE* user_list) {
                 continue; // Skip . and ..
             }
 
-            char user_connect_path[2*MAX_FILEPATH_LENGTH];
+            char user_connect_path[2 * MAX_FILEPATH_LENGTH];
             snprintf(user_connect_path, sizeof(user_connect_path), "%s%s/connect", DATA_DIRECTORY, entry->d_name);
             if (access(user_connect_path, F_OK) == 0) {
                 FILE *connect_file = fopen(user_connect_path, "r");
@@ -303,5 +314,150 @@ int handle_list_users(char* username, int* n_connections, FILE* user_list) {
     }
 
     closedir(dir);
+    return 0;
+}
+
+int handle_list_content(char *username, char *owner, int *num_content, FILE *content_list) {
+    char user[MAX_FILEPATH_LENGTH];
+    snprintf(user, sizeof(user), "%s%s", DATA_DIRECTORY, username);
+
+    // If the directory doesn't exist, return an error, as the username does not exist
+    if (access(user, F_OK) == -1) {
+        perror("Error: user does not exist");
+        return 1;
+    }
+
+    // Check if user is connected
+    char user_connect[MAX_FILEPATH_LENGTH];
+    snprintf(user_connect, sizeof(user_connect), "%s%s/connect", DATA_DIRECTORY, username);
+    if (access(user_connect, F_OK) == -1) {
+        perror("Error: user is not connected");
+        return 2;
+    }
+
+    // Open the directory
+    DIR *dir = opendir(DATA_DIRECTORY);
+    if (dir == NULL) {
+        perror("Error opening directory");
+        return 4;
+    }
+
+    // Check if owner is registered
+    char owner_path[MAX_FILEPATH_LENGTH];
+    snprintf(owner_path, sizeof(owner_path), "%s%s", DATA_DIRECTORY, owner);
+    if (access(owner_path, F_OK) == -1) {
+        perror("Error: owner does not exist");
+        return 3;
+    }
+
+    // Check if owner is connected
+    char owner_connect[MAX_FILEPATH_LENGTH];
+    snprintf(owner_connect, sizeof(owner_connect), "%s%s/connect", DATA_DIRECTORY, owner);
+    if (access(owner_connect, F_OK) == -1) {
+        printf("Owner is not connected\n");
+        return 0;
+    }
+
+    // Check files in owner directory
+    char owner_files[MAX_FILEPATH_LENGTH];
+    snprintf(owner_files, sizeof(owner_files), "%s%s/files", DATA_DIRECTORY, owner);
+    DIR *owner_dir = opendir(owner_files);
+    if (owner_dir == NULL) {
+        perror("Error opening directory");
+        return 4;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(owner_dir)) != NULL) {
+        if (entry->d_type == DT_REG) {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+                continue; // Skip . and ..
+            }
+
+            // Write file name and content to user_list file
+            fprintf(content_list, "\t%s", entry->d_name);
+            (*num_content)++;
+            // Open file and write its content to content_list
+            char file_path[MAX_FILEPATH_LENGTH*2+6];
+            snprintf(file_path, sizeof(file_path), "%s/files/%s", owner_path, entry->d_name);
+            FILE *file = fopen(file_path, "r");
+            if (file == NULL) {
+                perror("Error opening file");
+                return 4;
+            }
+
+            char description[BUFFER_SIZE];
+            if (fgets(description, sizeof(description), file) == NULL) {
+                perror("Error reading file");
+                fclose(file);
+                return 4;
+            }
+
+            fprintf(content_list, " %s\n", description);
+            fclose(file);
+        }
+    }
+    closedir(owner_dir);
+    closedir(dir);
+    return 0;
+}
+
+int handle_disconnect (char* user){
+    char user_register[MAX_FILEPATH_LENGTH];
+    snprintf(user_register, sizeof(user_register), "%s%s", DATA_DIRECTORY, user);
+    if (access(user_register, F_OK) == -1) {
+        perror("Error: user does not exist");
+        return 1;
+    }
+
+    char user_connect[MAX_FILEPATH_LENGTH];
+    snprintf(user_connect, sizeof(user_connect), "%s%s/connect", DATA_DIRECTORY, user);
+    if (access(user_connect, F_OK) == -1) {
+        perror("Error: user is not connected");
+        return 2;
+    }
+    if (remove(user_connect) != 0) {
+        perror("Error deleting file");
+        return 3;
+    }
+    // TODO borrar la carpeta files?
+    printf("User disconnected successfully.\n");
+    return 0;
+}
+
+int handle_get_file(char* username, char* owner, char* address, int* port){
+    char user[MAX_FILEPATH_LENGTH];
+    snprintf(user, sizeof(user), "%s%s", DATA_DIRECTORY, username);
+
+    // If the directory doesn't exist, return an error, as the username does not exist
+    if (access(user, F_OK) == -1) {
+        perror("Error: user does not exist");
+        return 2;
+    }
+
+    // Check if user is connected
+    char user_connect[MAX_FILEPATH_LENGTH];
+    snprintf(user_connect, sizeof(user_connect), "%s%s/connect", DATA_DIRECTORY, username);
+    if (access(user_connect, F_OK) == -1) {
+        perror("Error: user is not connected");
+        return 2;
+    }
+
+    // Open owner connect file
+    char owner_connect[MAX_FILEPATH_LENGTH];
+    snprintf(owner_connect, sizeof(owner_connect), "%s%s/connect", DATA_DIRECTORY, owner);
+    FILE *connect_file = fopen(owner_connect, "r");
+    if (connect_file == NULL) {
+        perror("Error opening connect file");
+        return 2;
+    }
+    if (fscanf(connect_file, "%s\n%d\n", address, port) != 2) {
+        perror("Error reading connect file");
+        fclose(connect_file);
+        return 2;
+    }
+    printf("User connected to %s:%d\n", address, *port);
+
+    fclose(connect_file);
     return 0;
 }

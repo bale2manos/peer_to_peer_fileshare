@@ -73,6 +73,9 @@ void *tratar_peticion(void *sc_ptr) {
     pthread_mutex_unlock(&mutex);
     ssize_t ret;
     int n_users = 0;
+    int n_content = 0;
+    int client_port;
+    char client_address[INET_ADDRSTRLEN];
 
 
     printf("Handling petition\n");
@@ -172,7 +175,7 @@ void *tratar_peticion(void *sc_ptr) {
         char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción LIST_USERS\n");
-            send_result(sc, 2);
+            send_result(sc, 3);
             close(sc);
             pthread_exit(NULL);
         }
@@ -180,12 +183,67 @@ void *tratar_peticion(void *sc_ptr) {
         FILE *user_list = fopen("users_connected.txt", "w");
         if (user_list == NULL) {
             perror("Error opening file");
-            send_result(sc, 2);
+            send_result(sc, 3);
             close(sc);
             pthread_exit(NULL);
         }
         res = handle_list_users(username, &n_users, user_list);
         fclose(user_list);
+    } else if (strcmp(operation, "LIST_CONTENT") == 0){
+        char username[BUFFER_SIZE];
+        if (readLine(sc, username, BUFFER_SIZE) < 0) {
+            printf("Error en recepción LIST_USERS\n");
+            send_result(sc, 4);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
+        char owner[BUFFER_SIZE];
+        if (readLine(sc, owner, BUFFER_SIZE) < 0) {
+            printf("Error en recepción LIST_USERS\n");
+            send_result(sc, 4);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
+        FILE *user_content = fopen("user_content.txt", "w");
+        if (user_content == NULL) {
+            perror("Error opening file");
+            send_result(sc, 4);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
+        res = handle_list_content(username, owner, &n_content, user_content);
+        fclose(user_content);
+    } else if (strcmp(operation, "DISCONNECT") == 0){
+        char username[BUFFER_SIZE];
+        if (readLine(sc, username, BUFFER_SIZE) < 0) {
+            printf("Error en recepción DISCONNECT\n");
+            send_result(sc, 3);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        res = handle_disconnect(username);
+    } else if (strcmp(operation, "GET_FILE") == 0){
+        char username[BUFFER_SIZE];
+        if (readLine(sc, username, BUFFER_SIZE) < 0) {
+            printf("Error en recepción GET_FILE\n");
+            send_result(sc, 3);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        char owner[BUFFER_SIZE];
+        if (readLine(sc, owner, BUFFER_SIZE) < 0) {
+            printf("Error en recepción GET_FILE\n");
+            send_result(sc, 3);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        res = handle_get_file(username, owner, client_address, &client_port);
+    } else {
+        printf("Operación no reconocida\n");
+        res = 1;
     }
     pthread_mutex_unlock(&file_mutex);
 
@@ -217,6 +275,53 @@ void *tratar_peticion(void *sc_ptr) {
         if (remove("users_connected.txt") != 0) {
             perror("Error deleting file");
             close(sc);
+            pthread_exit(NULL);
+        }
+    }
+    else if (strcmp(operation, "LIST_CONTENT") == 0){
+        printf("Socket: %d\n", sc);
+        send_result(sc, n_content);
+
+        pthread_mutex_lock(&file_mutex);
+        FILE *user_content = fopen("user_content.txt", "r");
+        printf("Sending user content\n");
+        if (user_content == NULL) {
+            perror("Error opening file");
+            close(sc);
+            pthread_exit(NULL);
+        }
+        char line[BUFFER_SIZE];
+        while (fgets(line, sizeof(line), user_content)) {
+            printf("Sending: %s\n", line);
+            if (writeLine(sc, line) < 0) {
+                perror("Error sending result\n");
+                pthread_exit(NULL);
+            }
+        }
+        fclose(user_content);
+        pthread_mutex_unlock(&file_mutex);
+        // Delete file
+        if (remove("user_content.txt") != 0) {
+            perror("Error deleting file");
+            close(sc);
+            pthread_exit(NULL);
+        }
+    }
+    else if (strcmp(operation, "GET_FILE") == 0){
+        // Send client address and port
+        printf("Sending client address and port\n");
+        printf("Address: %s\n", client_address);
+        if (writeLine(sc, client_address) < 0) {
+            perror("Error sending result\n");
+            send_result(sc, 2);
+            pthread_exit(NULL);
+        }
+        printf("Port: %d\n", client_port);
+        char port_str[BUFFER_SIZE];
+        sprintf(port_str, "%d", client_port);
+        if (writeLine(sc, port_str) < 0) {
+            perror("Error sending result\n");
+            send_result(sc, 2);
             pthread_exit(NULL);
         }
     }

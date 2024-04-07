@@ -23,16 +23,11 @@ int handle_publish(char* userName, char* fileName, char* description);
 
 int handle_delete(char* username, char* filename);
 
-int handle_list_users(char* username, int* n_connections_str, FILE* user_list);
+int handle_list_users(char* username, int* n_connections, FILE* user_list);
 
-int handle_set_value(int key, char* value1, int N_value2, double* V_value2);
+int handle_list_content(char* username, char* owner, int* num_content, FILE* content_list);
 
-int handle_get_value(int key, char* value1, int* N_value2, double* V_value2);
+int handle_disconnect (char* user);
 
-int handle_modify_value(int key, char* value1, int N_value2, double* V_value2);
-
-int handle_delete_key(int key);
-
-int handle_exist(int key);
-
+int handle_get_file(char* username, char* owner,  char* address, int* port);
 #endif //EX1_SERVIDOR_HANDLE_H
