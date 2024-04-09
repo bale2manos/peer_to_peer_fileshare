@@ -77,9 +77,6 @@ void *tratar_peticion(void *sc_ptr) {
     int client_port;
     char client_address[INET_ADDRSTRLEN];
 
-
-    printf("Handling petition\n");
-    printf("socket: %d\n", sc);
     char operation[BUFFER_SIZE];
     ret = readLine(sc, operation, BUFFER_SIZE);
     if (ret < 0) {
@@ -87,7 +84,7 @@ void *tratar_peticion(void *sc_ptr) {
         //return -1;
         pthread_exit(NULL);
     }
-    printf("La operación es: %s\n", operation);
+    printf("s > %s FROM USER\n", operation);
     int res = 0;
 
     pthread_mutex_lock(&file_mutex);
@@ -332,8 +329,9 @@ void *tratar_peticion(void *sc_ptr) {
 
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        perror("usage ./servidor <port>");
+    if (argc != 3 || strcmp(argv[1], "-p") != 0) {
+        printf("Usage: ./server -p <port>\n");
+        return EXIT_FAILURE;
     }
 
     pthread_t thid;
@@ -350,7 +348,7 @@ int main(int argc, char *argv[]) {
 
 
     int sc;
-    int port = atoi(argv[1]);
+    int port = atoi(argv[2]);
     sd = serverSocket(INADDR_ANY, port, SOCK_STREAM);
     if (sd < 0) {
         printf("SERVER: Error en serverSocket\n");
@@ -365,10 +363,12 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    printf("s > init server: %s:%d\n", "localhost", port);
+
     while (1) {
         // aceptar cliente
         if ((sc = serverAccept(sd)) < 0) {
-            printf("Error en serverAccept\n");
+            printf("Error accepting client connection\n");
             continue;
         }
 
