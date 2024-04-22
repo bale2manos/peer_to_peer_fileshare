@@ -136,13 +136,17 @@ int handle_connect(char *username, int port, char *address) {
         return 3;
     }
 
-    // Create a folder in the same directory called 'files'
+    // Check if the user has a folder called 'files'
     char user_files[MAX_FILEPATH_LENGTH];
     snprintf(user_files, sizeof(user_files), "%s%s/files", DATA_DIRECTORY, username);
-    if (mkdir(user_files, 0700) == -1) {
-        perror("Error creating directory");
-        return 3;
+    if (access(user_files, F_OK) == -1) {
+        // Create a folder in the same directory called 'files'
+        if (mkdir(user_files, 0700) == -1) {
+            perror("Error creating directory");
+            return 3;
+        }
     }
+
     return 0;
 }
 
@@ -305,7 +309,7 @@ int handle_list_users(char *username, int *n_connections, FILE *user_list) {
                 }
 
                 // Write connection info to user_list file
-                fprintf(user_list, "\t%s %s %d\n", entry->d_name, address, port);
+                fprintf(user_list, "%s %s %d\n", entry->d_name, address, port);
                 fclose(connect_file);
 
                 (*n_connections)++;
@@ -420,7 +424,7 @@ int handle_disconnect (char* user){
         perror("Error deleting file");
         return 3;
     }
-    // TODO borrar la carpeta files?
+
     printf("User disconnected successfully.\n");
     return 0;
 }

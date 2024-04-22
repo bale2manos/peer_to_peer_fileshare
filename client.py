@@ -4,7 +4,6 @@ import socket
 import threading
 import os
 
-
 class client :
 
     # ******************** TYPES *********************
@@ -15,7 +14,7 @@ class client :
         ERROR = 1
         USER_ERROR = 2
 
-    # ****************** ATTRIBUTES ******************
+    # ****************** fATTRIBUTES ******************
     _server = None
     _port = -1
     _sock = None
@@ -30,6 +29,8 @@ class client :
                 _username = file.read()
         except:
             _username = None
+    print("Username: " + str(_username))
+    _list_users = {}
     # ******************** METHODS *******************
 
     @staticmethod
@@ -230,8 +231,13 @@ class client :
 
             # Create a new thread to listen for incoming connections in that socket
             client._stop_event.clear()
-            client.listening_thread = threading.Thread(target=client.listen_for_connections, args=(client._listening_socket,))
-            client.listening_thread.start()
+            client._listening_thread = threading.Thread(target=client.listen_for_connections, args=(client._listening_socket,))
+            print("Listening thread created")
+            print("Listening thread: " + str(client._listening_thread))
+            if client._listening_socket:
+                client._listening_thread.start()
+            print("Listening thread started")
+            print("Listening thread: " + str(client._listening_thread))
 
             # Establish a connection with the server
             client.connect_to_server()
@@ -276,8 +282,16 @@ class client :
         try:
             # Parar la ejecución del hilo y destruirlo
             client._stop_event.set()
-            client._listening_socket.close()
-            client._listening_thread.join() # TODO revisar si esto funciona bien
+            # Cerrar el socket de escucha y esperar a que el hilo termine con manejo de errores
+            if client._listening_socket:
+                client._listening_socket.close()
+                print("Listening socket closed")
+            print("Listening thread: " + str(client._listening_thread))
+            if client._listening_thread:
+                print("Waiting for listening thread to join")
+                client._listening_thread.join() # TODO no funciona bien revisar
+                print("Listening thread joined")
+
 
             # Send DISCONNECT command
             client._sock.sendall(b'DISCONNECT\0')
@@ -401,8 +415,16 @@ class client :
             if response == client.RC.OK.value:
                 print("LIST_USERS OK")
                 n_connections = int(client.readString())
+                print("n_connections: " + str(n_connections))
                 for connection in range(n_connections):
-                    print(client.readString())
+                    user_info = client.readString()
+                    print("\t%s" % user_info)
+                    user_info = user_info.split(' ')
+                    user_name = user_info[0]
+                    user_ip = user_info[1]
+                    # from the port remove the las '\n' character
+                    user_port = user_info[2][:-1]
+                    client._list_users[user_name] = (user_ip, user_port)
             elif response == client.RC.ERROR.value:
                 print("LIST_USERS FAIL, USER DOES NOT EXIST")
             elif response == client.RC.USER_ERROR.value:
@@ -471,30 +493,38 @@ class client :
             return client.RC.ERROR
         try:
             # SEND GET_FILE command
-            # TODO esto creo que no es así
             client._sock.sendall(b'GET_FILE\0')
 
             # Send user operating
             client._sock.sendall(client._username.encode() + b'\0')
 
-            # Send user owner
-            client._sock.sendall(user.encode() + b'\0')
+            # Check if the user is in the list of users
+            if user not in client._list_users.keys():
+                print("User not in list of users")
+                # Send user owner
+                client._sock.sendall(user.encode() + b'\0')
 
-            # Receive response
-            server_response = int(client.readString())
-            print("Server response: " + str(server_response))
-
-            if server_response != client.RC.OK.value:
-                print("GET_FILE FAIL")
+                # Receive response
+                server_response = int(client.readString())
+                print("Server response: " + str(server_response))
+                if server_response != client.RC.OK.value:
+                    print("GET_FILE FAIL")
+                    client._sock.close()
+                    return 2
+                # Get client's ip and port
+                client_address = client.readString()
+                client_port = int(client.readString())
                 client._sock.close()
-                return 2
+                print("Client address: " + client_address)
+                print("Client port: " + str(client_port))
 
-            # Get client's ip and port
-            client_address = client.readString()
-            client_port = int(client.readString())
-            client._sock.close()
-            print("Client address: " + client_address)
-            print("Client port: " + str(client_port))
+
+            else:
+                print("User in list of users")
+                client_address = client._list_users[user][0]
+                client_port = int(client._list_users[user][1])
+                print("Client address: " + client_address)
+                print("Client port: " + str(client_port))
 
             try:
                 # Connect to the client
@@ -660,14 +690,14 @@ class client :
 
 
 
+
+
     # ******************** MAIN *********************
     @staticmethod
     def main(argv) :
         if (not client.parseArguments(argv)) :
             client.usage()
             return
-
-        #  Write code here
 
         client.shell()
         print("+++ FINISHED +++")
