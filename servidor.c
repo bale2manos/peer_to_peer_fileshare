@@ -107,6 +107,7 @@ void *tratar_peticion(void *sc_ptr) {
     int n_content = 0;
     int client_port;
     char client_address[INET_ADDRSTRLEN];
+    char username[BUFFER_SIZE];
 
     char operation[BUFFER_SIZE];
     ret = readLine(sc, operation, BUFFER_SIZE);
@@ -120,7 +121,6 @@ void *tratar_peticion(void *sc_ptr) {
 
     pthread_mutex_lock(&file_mutex);
     if (strcmp(operation, "REGISTER") == 0) {
-        char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción REGISTER\n");
             send_result(sc, 2);
@@ -129,7 +129,6 @@ void *tratar_peticion(void *sc_ptr) {
         }
         res = handle_register(username);
     } else if (strcmp(operation, "UNREGISTER") == 0) {
-        char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción UNREGISTER\n");
             send_result(sc, 2);
@@ -138,7 +137,6 @@ void *tratar_peticion(void *sc_ptr) {
         }
         res = handle_unregister(username);
     } else if (strcmp(operation, "CONNECT") == 0) {
-        char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción CONNECT\n");
             send_result(sc, 2);
@@ -160,7 +158,6 @@ void *tratar_peticion(void *sc_ptr) {
         }
         res = handle_connect(username, atoi(port_str), client_address);
     } else if (strcmp(operation, "PUBLISH") == 0) {
-        char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción PUBLISH\n");
             send_result(sc, 2);
@@ -184,7 +181,6 @@ void *tratar_peticion(void *sc_ptr) {
         res = handle_publish(username, fileName, description);
 
     } else if (strcmp(operation, "DELETE") == 0) {
-        char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción PUBLISH\n");
             send_result(sc, 2);
@@ -200,7 +196,6 @@ void *tratar_peticion(void *sc_ptr) {
         }
         res = handle_delete(username, fileName);
     } else if (strcmp(operation, "LIST_USERS") == 0) {
-        char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción LIST_USERS\n");
             send_result(sc, 3);
@@ -218,7 +213,6 @@ void *tratar_peticion(void *sc_ptr) {
         res = handle_list_users(username, &n_users, user_list);
         fclose(user_list);
     } else if (strcmp(operation, "LIST_CONTENT") == 0){
-        char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción LIST_USERS\n");
             send_result(sc, 4);
@@ -245,7 +239,6 @@ void *tratar_peticion(void *sc_ptr) {
         res = handle_list_content(username, owner, &n_content, user_content);
         fclose(user_content);
     } else if (strcmp(operation, "DISCONNECT") == 0){
-        char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción DISCONNECT\n");
             send_result(sc, 3);
@@ -254,7 +247,6 @@ void *tratar_peticion(void *sc_ptr) {
         }
         res = handle_disconnect(username);
     } else if (strcmp(operation, "GET_FILE") == 0){
-        char username[BUFFER_SIZE];
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción GET_FILE\n");
             send_result(sc, 3);
@@ -354,6 +346,9 @@ void *tratar_peticion(void *sc_ptr) {
         }
     }
 
+    char rpc_string[2*BUFFER_SIZE+3];
+    sprintf(rpc_string,"%s %s ",username,operation);
+    print_rpc_servidor(rpc_string);
     close(sc);
     pthread_exit(0);
 }
