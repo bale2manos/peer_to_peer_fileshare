@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -g -fPIC
-LDFLAGS = -L. -Wl,-rpath,'$$ORIGIN' -lclaves
+CFLAGS = -Wall -Wextra -pedantic -g -I/usr/include/tirpc
+LDFLAGS = -L. -Wl,-rpath,'$$ORIGIN' -lclaves -ldl -ltirpc -lpthread
 
 SRC_DIR = ./test
 TEST_SOURCES = $(wildcard $(SRC_DIR)/*.c)
@@ -8,7 +8,7 @@ TEST_EXECUTABLES = $(patsubst $(SRC_DIR)/%.c, $(SRC_DIR)/%, $(TEST_SOURCES))
 
 all: servidor libclaves.so cliente $(TEST_EXECUTABLES)
 
-servidor: servidor.o servidor_handle.o comm.o
+servidor: servidor.o servidor_handle.o comm.o  servidor_rpc_clnt.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 libclaves.so: comm.o

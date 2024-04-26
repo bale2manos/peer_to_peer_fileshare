@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "servidor_handle.h"
 #include "comm.h"
+#include "servidor_rpc.h"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t file_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -18,6 +19,36 @@ int mensaje_no_copiado = true;
 pthread_cond_t cond_mensaje = PTHREAD_COND_INITIALIZER;
 pthread_attr_t thread_attr;
 int sd;
+
+void print_rpc_servidor(char *host)
+{
+    CLIENT *clnt;
+    enum clnt_stat retval_1;
+    int result_1;
+    char *print_rpc_1_arg1;
+
+    char *host = getenv("IP_TUPLAS");
+    if (NULL == host) {
+        printf("Error: IP_TUPLAS not set\n");
+        return -1;
+    }
+
+    clnt = clnt_create (host, SERVIDOR_RPC, VERSION_RPC, "tcp");
+    if (clnt == NULL) {
+        clnt_pcreateerror (host);
+        exit (1);
+    }
+
+    retval_1 = print_rpc_1(print_rpc_1_arg1, &result_1, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
+    }
+    clnt_destroy (clnt);
+    return result_1;
+}
+
+
+
 
 void send_result(int sc, int res) {
     char res_str[BUFFER_SIZE];
