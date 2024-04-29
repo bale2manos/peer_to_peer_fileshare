@@ -5,11 +5,15 @@
  */
 
 #include "servidor_rpc.h"
-#include <stdio.h>
 
+bool_t
 print_rpc_1_svc(char *arg1, int *result,  struct svc_req *rqstp)
 {
+	bool_t retval;
+
     printf("%s\n", arg1);
+
+	return retval;
 }
 
 int

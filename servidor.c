@@ -20,17 +20,16 @@ pthread_cond_t cond_mensaje = PTHREAD_COND_INITIALIZER;
 pthread_attr_t thread_attr;
 int sd;
 
-void print_rpc_servidor(char *host)
+void print_rpc_servidor(char *string_to_print)
 {
     CLIENT *clnt;
     enum clnt_stat retval_1;
     int result_1;
-    char *print_rpc_1_arg1;
 
     char *host = getenv("IP_TUPLAS");
     if (NULL == host) {
         printf("Error: IP_TUPLAS not set\n");
-        return -1;
+        return;
     }
 
     clnt = clnt_create (host, SERVIDOR_RPC, VERSION_RPC, "tcp");
@@ -39,12 +38,11 @@ void print_rpc_servidor(char *host)
         exit (1);
     }
 
-    retval_1 = print_rpc_1(print_rpc_1_arg1, &result_1, clnt);
+    retval_1 = print_rpc_1(string_to_print, &result_1, clnt);
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
     }
     clnt_destroy (clnt);
-    return result_1;
 }
 
 
