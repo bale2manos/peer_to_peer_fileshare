@@ -26,11 +26,7 @@ void print_rpc_servidor(char *string_to_print)
     enum clnt_stat retval_1;
     int result_1;
 
-    char *host = getenv("IP_TUPLAS");
-    if (NULL == host) {
-        printf("Error: IP_TUPLAS not set\n");
-        return;
-    }
+    char * host = "localhost";
 
     clnt = clnt_create (host, SERVIDOR_RPC, VERSION_RPC, "tcp");
     if (clnt == NULL) {
@@ -116,6 +112,17 @@ void *tratar_peticion(void *sc_ptr) {
     }
     printf("s > %s FROM USER\n", operation);
     int res = 0;
+    if(strcmp(operation, "GET_FILE") != 0){
+        char c_time_string[100];
+        ret = readLine(sc, c_time_string, 100);
+        if (ret < 0) {
+            printf("Error en recepción c_time_string\n");
+            //return -1;
+            pthread_exit(NULL);
+        }
+    }
+
+
 
     pthread_mutex_lock(&file_mutex);
     if (strcmp(operation, "REGISTER") == 0) {

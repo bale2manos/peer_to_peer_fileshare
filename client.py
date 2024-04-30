@@ -47,6 +47,14 @@ class client :
             return client.RC.ERROR
 
     @staticmethod
+    def get_current_timestamp():
+        wsdl_url = "http://localhost:8000/?wsdl"
+        soap = zeep.Client(wsdl=wsdl_url)
+        result = soap.service.take_timestamp()
+        return result
+
+
+    @staticmethod
     def readString():
         a = ''
         while True:
@@ -80,16 +88,18 @@ class client :
             print("Listening for incoming connections on port: " + str(listening_socket.getsockname()[1]))
 
             while client._conectado:
-                print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa")
                 # Accept incoming connections
                 try:
                     connection, address = listening_socket.accept()
                     print("Connection received from: " + str(address))
-                except:
-                    print("Error accepting connection")
+                except Exception as e:
+                    # If errno 22 is raised, it means that the socket has been closed
+                    if e.errno == 22:
+                        print("Socket closed, thread finished")
+                        break
+                    print("Error accepting connection: ", e)
                     continue
                 # Get port to send from the address
-                print("BBBBBBBBBBBBBBBBBBBBBBBBb")
 
 
                 # Receive first word, read from the connection until the first space
@@ -170,6 +180,10 @@ class client :
             # Send REGISTER command
             client._sock.sendall(b'REGISTER\0')
 
+            c_timestamp = client.get_current_timestamp()
+
+            client._sock.sendall(c_timestamp.encode() + b'\0')
+
             # Send username
             client._sock.sendall(user.encode() + b'\0')
 
@@ -201,6 +215,10 @@ class client :
         try:
             # Send REGISTER command
             client._sock.sendall(b'UNREGISTER\0')
+
+            c_timestamp = client.get_current_timestamp()
+
+            client._sock.sendall(c_timestamp.encode() + b'\0')
 
             # Send username
             client._sock.sendall(user.encode() + b'\0')
@@ -252,6 +270,10 @@ class client :
 
             # Send 'CONNECT' command
             client._sock.sendall(b'CONNECT\0')
+
+            c_timestamp = client.get_current_timestamp()
+
+            client._sock.sendall(c_timestamp.encode() + b'\0')
 
             # Send date
 
@@ -305,6 +327,9 @@ class client :
             print("Client disconnected sent to server")
             # Send DISCONNECT command
             client._sock.sendall(b'DISCONNECT\0')
+            c_timestamp = client.get_current_timestamp()
+
+            client._sock.sendall(c_timestamp.encode() + b'\0')
 
             print("User: " + user)
 
@@ -384,6 +409,10 @@ class client :
             # Send PUBLISH command
             client._sock.sendall(b'DELETE\0')
 
+            c_timestamp = client.get_current_timestamp()
+
+            client._sock.sendall(c_timestamp.encode() + b'\0')
+
             # Send userName from attribute
             client._sock.sendall(client._username.encode() + b'\0')
 
@@ -421,6 +450,9 @@ class client :
         try:
             # Send LIST_USERS command
             client._sock.sendall(b'LIST_USERS\0')
+            c_timestamp = client.get_current_timestamp()
+
+            client._sock.sendall(c_timestamp.encode() + b'\0')
 
             # Send username
             client._sock.sendall(client._username.encode() + b'\0')
@@ -467,6 +499,10 @@ class client :
         try:
             # Send LIST_CONTENT command
             client._sock.sendall(b'LIST_CONTENT\0')
+
+            c_timestamp = client.get_current_timestamp()
+
+            client._sock.sendall(c_timestamp.encode() + b'\0')
 
             # Send user operating
             client._sock.sendall(client._username.encode() + b'\0')
