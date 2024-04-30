@@ -122,8 +122,6 @@ void *tratar_peticion(void *sc_ptr) {
         }
     }
 
-
-
     pthread_mutex_lock(&file_mutex);
     if (strcmp(operation, "REGISTER") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
@@ -132,6 +130,9 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
+        char rpc_string[2*BUFFER_SIZE+103];
+        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+        print_rpc_servidor(rpc_string);
         res = handle_register(username);
     } else if (strcmp(operation, "UNREGISTER") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
@@ -140,6 +141,9 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
+        char rpc_string[2*BUFFER_SIZE+103];
+        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+        print_rpc_servidor(rpc_string);
         res = handle_unregister(username);
     } else if (strcmp(operation, "CONNECT") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
@@ -148,6 +152,9 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
+        char rpc_string[2*BUFFER_SIZE+103];
+        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+        print_rpc_servidor(rpc_string);
         char port_str[BUFFER_SIZE];
         if (readLine(sc, port_str, BUFFER_SIZE) < 0) {
             printf("Error en recepción CONNECT\n");
@@ -169,6 +176,10 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
+        char rpc_string[2*BUFFER_SIZE+103];
+        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+        print_rpc_servidor(rpc_string);
+
         char fileName[BUFFER_SIZE];
         if (readLine(sc, fileName, BUFFER_SIZE) < 0) {
             printf("Error en recepción PUBLISH\n");
@@ -192,6 +203,10 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
+        char rpc_string[2*BUFFER_SIZE+103];
+        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+        print_rpc_servidor(rpc_string);
+
         char fileName[BUFFER_SIZE];
         if (readLine(sc, fileName, BUFFER_SIZE) < 0) {
             printf("Error en recepción PUBLISH\n");
@@ -207,6 +222,9 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
+        char rpc_string[2*BUFFER_SIZE+103];
+        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+        print_rpc_servidor(rpc_string);
 
         FILE *user_list = fopen("users_connected.txt", "w");
         if (user_list == NULL) {
@@ -224,6 +242,9 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
+        char rpc_string[2*BUFFER_SIZE+103];
+        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+        print_rpc_servidor(rpc_string);
 
         char owner[BUFFER_SIZE];
         if (readLine(sc, owner, BUFFER_SIZE) < 0) {
@@ -250,6 +271,10 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
+        char rpc_string[2*BUFFER_SIZE+103];
+        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+        print_rpc_servidor(rpc_string);
+
         res = handle_disconnect(username);
     } else if (strcmp(operation, "GET_FILE") == 0){
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
@@ -274,6 +299,8 @@ void *tratar_peticion(void *sc_ptr) {
 
 
     send_result(sc, res);
+
+
     if (strcmp(operation, "LIST_USERS") == 0){
         printf("Socket: %d\n", sc);
         send_result(sc, n_users);
@@ -350,10 +377,7 @@ void *tratar_peticion(void *sc_ptr) {
             pthread_exit(NULL);
         }
     }
-    if(strcmp(operation,"GET_FILE")!=0){char rpc_string[2*BUFFER_SIZE+103];
-        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
-        print_rpc_servidor(rpc_string);
-    }
+
     close(sc);
     pthread_exit(0);
 }
