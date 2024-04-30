@@ -343,10 +343,10 @@ void *tratar_peticion(void *sc_ptr) {
             pthread_exit(NULL);
         }
     }
-
-    char rpc_string[2*BUFFER_SIZE+3];
-    sprintf(rpc_string,"%s %s ",username,operation);
-    print_rpc_servidor(rpc_string);
+    if(strcmp(operation,"GET_FILE")!=0){char rpc_string[2*BUFFER_SIZE+103];
+        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+        print_rpc_servidor(rpc_string);
+    }
     close(sc);
     pthread_exit(0);
 }

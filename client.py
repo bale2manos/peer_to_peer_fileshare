@@ -3,6 +3,7 @@ import argparse
 import socket
 import threading
 import os
+import zeep
 
 class client :
 
@@ -338,6 +339,10 @@ class client :
         try:
             # Send PUBLISH command
             client._sock.sendall(b'PUBLISH\0')
+
+            c_timestamp = client.get_current_timestamp()
+
+            client._sock.sendall(c_timestamp.encode() + b'\0')
 
             # Send userName from attribute
             client._sock.sendall(client._username.encode() + b'\0')
