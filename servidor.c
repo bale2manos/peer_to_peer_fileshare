@@ -46,11 +46,15 @@ void print_rpc_servidor(char *string_to_print)
 
 void send_result(int sc, int res) {
     char res_str[BUFFER_SIZE];
+    printf("Socket %d hasta 49\n", sc);
     sprintf(res_str, "%d", res);
+    printf("Socket %d hasta 51\n", sc);
     if (writeLine(sc, res_str) < 0) {
+        printf("ERROR ERROR ERROR\n");
         perror("Error sending result\n");
         exit(0);
     }
+    printf("Socket %d hasta 55\n", sc);
 }
 
 int get_client_address(int sc, char *address, size_t addr_size) {
@@ -96,6 +100,7 @@ void *tratar_peticion(void *sc_ptr) {
     mensaje_no_copiado = false;
     pthread_cond_signal(&cond_mensaje);
     pthread_mutex_unlock(&mutex);
+
     ssize_t ret;
     int n_users = 0;
     int n_content = 0;
@@ -110,10 +115,11 @@ void *tratar_peticion(void *sc_ptr) {
         //return -1;
         pthread_exit(NULL);
     }
-    printf("s > %s FROM USER\n", operation);
+    printf("s > %s   FROM USER\n", operation);
     int res = 0;
+    char c_time_string[100];
     if(strcmp(operation, "GET_FILE") != 0){
-        char c_time_string[100];
+
         ret = readLine(sc, c_time_string, 100);
         if (ret < 0) {
             printf("Error en recepción c_time_string\n");
@@ -322,19 +328,21 @@ void *tratar_peticion(void *sc_ptr) {
             }
         }
         fclose(user_list);
-        pthread_mutex_unlock(&file_mutex);
+
         // Delete file
         if (remove("users_connected.txt") != 0) {
             perror("Error deleting file");
             close(sc);
             pthread_exit(NULL);
         }
+        pthread_mutex_unlock(&file_mutex);
     }
     else if (strcmp(operation, "LIST_CONTENT") == 0){
         printf("Socket: %d\n", sc);
         send_result(sc, n_content);
-
+        printf("AAAAAAAa\n");
         pthread_mutex_lock(&file_mutex);
+        printf("BBBBBBBBBBBBBBB\n");
         FILE *user_content = fopen("user_content.txt", "r");
         printf("Sending user content\n");
         if (user_content == NULL) {
@@ -351,13 +359,16 @@ void *tratar_peticion(void *sc_ptr) {
             }
         }
         fclose(user_content);
-        pthread_mutex_unlock(&file_mutex);
+
         // Delete file
         if (remove("user_content.txt") != 0) {
             perror("Error deleting file");
             close(sc);
             pthread_exit(NULL);
         }
+        printf("CCCCCCCCCCCCCCCCCCcc\n");
+        pthread_mutex_unlock(&file_mutex);
+        printf("DDDDDDDDDDDDDDDDDDDDdddd\n");
     }
     else if (strcmp(operation, "GET_FILE") == 0){
         // Send client address and port

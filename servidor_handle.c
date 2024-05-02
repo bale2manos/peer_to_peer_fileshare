@@ -173,11 +173,17 @@ int handle_publish(char *userName, char *fileName, char *description) {
     char new_file_path[2 * MAX_FILEPATH_LENGTH];
     snprintf(new_file_path, sizeof(new_file_path), "%s/files/%s", user, fileName);
 
+    // Comprobar si el archivo ya existe
+    if (access (new_file_path, F_OK) != -1) {
+        perror("Error: file already exists");
+        return 3;
+    }
+
     // Abrir el archivo de texto para escribir el contenido
     FILE *new_file = fopen(new_file_path, "w");
     if (new_file == NULL) {
         perror("Error creating new file");
-        return 3;
+        return 4;
     }
 
     // Escribir la descripción en el archivo de texto

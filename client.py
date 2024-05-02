@@ -30,7 +30,6 @@ class client :
                 _username = file.read()
         except:
             _username = None
-    print("Username: " + str(_username))
     _list_users = {}
     # ******************** METHODS *******************
 
