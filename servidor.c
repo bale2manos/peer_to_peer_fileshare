@@ -118,6 +118,7 @@ void *tratar_peticion(void *sc_ptr) {
     printf("s > %s   FROM USER\n", operation);
     int res = 0;
     char c_time_string[100];
+    char owner[BUFFER_SIZE];
     if(strcmp(operation, "GET_FILE") != 0){
 
         ret = readLine(sc, c_time_string, 100);
@@ -232,7 +233,9 @@ void *tratar_peticion(void *sc_ptr) {
         sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
         print_rpc_servidor(rpc_string);
 
-        FILE *user_list = fopen("users_connected.txt", "w");
+        char user_list_name[MAX_FILEPATH_LENGTH];
+        sprintf(user_list_name, "%s_users_connected.txt", username);
+        FILE *user_list = fopen(user_list_name, "w");
         if (user_list == NULL) {
             perror("Error opening file");
             send_result(sc, 3);
@@ -252,7 +255,7 @@ void *tratar_peticion(void *sc_ptr) {
         sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
         print_rpc_servidor(rpc_string);
 
-        char owner[BUFFER_SIZE];
+
         if (readLine(sc, owner, BUFFER_SIZE) < 0) {
             printf("Error en recepción LIST_USERS\n");
             send_result(sc, 4);
@@ -260,7 +263,9 @@ void *tratar_peticion(void *sc_ptr) {
             pthread_exit(NULL);
         }
 
-        FILE *user_content = fopen("user_content.txt", "w");
+        char user_content_name[MAX_FILEPATH_LENGTH];
+        sprintf(user_content_name, "%s%s_content.txt", username, owner);
+        FILE *user_content = fopen(user_content_name, "w");
         if (user_content == NULL) {
             perror("Error opening file");
             send_result(sc, 4);
@@ -312,7 +317,9 @@ void *tratar_peticion(void *sc_ptr) {
         send_result(sc, n_users);
 
         pthread_mutex_lock(&file_mutex);
-        FILE *user_list = fopen("users_connected.txt", "r");
+        char users_connected_path[MAX_FILEPATH_LENGTH];
+        sprintf(users_connected_path, "%s_users_connected.txt", username);
+        FILE *user_list = fopen(users_connected_path, "r"); // TODO change name file to avoid race condition
         printf("Sending users connected\n");
         if (user_list == NULL) {
             perror("Error opening file");
@@ -343,7 +350,10 @@ void *tratar_peticion(void *sc_ptr) {
         printf("AAAAAAAa\n");
         pthread_mutex_lock(&file_mutex);
         printf("BBBBBBBBBBBBBBB\n");
-        FILE *user_content = fopen("user_content.txt", "r");
+
+        char user_content_name[MAX_FILEPATH_LENGTH];
+        sprintf(user_content_name, "%s%s_content.txt", username, owner);
+        FILE *user_content = fopen(user_content_name, "r");
         printf("Sending user content\n");
         if (user_content == NULL) {
             perror("Error opening file");
