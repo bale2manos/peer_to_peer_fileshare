@@ -233,7 +233,7 @@ void *tratar_peticion(void *sc_ptr) {
         sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
         print_rpc_servidor(rpc_string);
 
-        char user_list_name[MAX_FILEPATH_LENGTH];
+        char user_list_name[MAX_FILEPATH_LENGTH*3];
         sprintf(user_list_name, "%s_users_connected.txt", username);
         FILE *user_list = fopen(user_list_name, "w");
         if (user_list == NULL) {
@@ -263,7 +263,7 @@ void *tratar_peticion(void *sc_ptr) {
             pthread_exit(NULL);
         }
 
-        char user_content_name[MAX_FILEPATH_LENGTH];
+        char user_content_name[MAX_FILEPATH_LENGTH*3];
         sprintf(user_content_name, "%s%s_content.txt", username, owner);
         FILE *user_content = fopen(user_content_name, "w");
         if (user_content == NULL) {
@@ -317,13 +317,14 @@ void *tratar_peticion(void *sc_ptr) {
         send_result(sc, n_users);
 
         pthread_mutex_lock(&file_mutex);
-        char users_connected_path[MAX_FILEPATH_LENGTH];
+        char users_connected_path[MAX_FILEPATH_LENGTH*2];
         sprintf(users_connected_path, "%s_users_connected.txt", username);
         FILE *user_list = fopen(users_connected_path, "r"); // TODO change name file to avoid race condition
         printf("Sending users connected\n");
         if (user_list == NULL) {
             perror("Error opening file");
             close(sc);
+
             pthread_exit(NULL);
         }
         char line[BUFFER_SIZE];
@@ -337,7 +338,7 @@ void *tratar_peticion(void *sc_ptr) {
         fclose(user_list);
 
         // Delete file
-        if (remove("users_connected.txt") != 0) {
+        if (remove(users_connected_path) != 0) {
             perror("Error deleting file");
             close(sc);
             pthread_exit(NULL);
@@ -351,7 +352,7 @@ void *tratar_peticion(void *sc_ptr) {
         pthread_mutex_lock(&file_mutex);
         printf("BBBBBBBBBBBBBBB\n");
 
-        char user_content_name[MAX_FILEPATH_LENGTH];
+        char user_content_name[MAX_FILEPATH_LENGTH*3];
         sprintf(user_content_name, "%s%s_content.txt", username, owner);
         FILE *user_content = fopen(user_content_name, "r");
         printf("Sending user content\n");
@@ -371,7 +372,7 @@ void *tratar_peticion(void *sc_ptr) {
         fclose(user_content);
 
         // Delete file
-        if (remove("user_content.txt") != 0) {
+        if (remove(user_content_name) != 0) {
             perror("Error deleting file");
             close(sc);
             pthread_exit(NULL);

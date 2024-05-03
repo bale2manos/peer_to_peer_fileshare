@@ -6,9 +6,9 @@ SRC_DIR = ./test
 TEST_SOURCES = $(wildcard $(SRC_DIR)/*.c)
 TEST_EXECUTABLES = $(patsubst $(SRC_DIR)/%.c, $(SRC_DIR)/%, $(TEST_SOURCES))
 
-all: servidor $(TEST_EXECUTABLES)
+all: server $(TEST_EXECUTABLES)
 
-servidor: servidor.o servidor_handle.o comm.o  servidor_rpc_clnt.o
+server: servidor.o servidor_handle.o comm.o  servidor_rpc_clnt.o
 	$(CC) $(CFLAGS)  $^ -o $@ $(LDFLAGS)
 
 $(SRC_DIR)/%: $(SRC_DIR)/%.c
