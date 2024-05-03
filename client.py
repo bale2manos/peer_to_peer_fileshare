@@ -539,12 +539,12 @@ class client :
 
     @staticmethod
     def  getfile(user,  remote_FileName,  local_FileName) :
-        if client.connect_to_server() == client.RC.ERROR:
-            print("Error connecting to server")
-            return client.RC.ERROR
         try:
             # Check if the user is in the list of users
             if user not in client._list_users.keys():
+                if client.connect_to_server() == client.RC.ERROR:
+                    print("Error connecting to server")
+                    return client.RC.ERROR
                 # SEND GET_FILE command
                 client._sock.sendall(b'GET_FILE\0')
 
