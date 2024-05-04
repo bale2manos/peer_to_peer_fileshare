@@ -30,7 +30,7 @@ except FileNotFoundError:
     pass
 
 print("Borrando base de datos")
-time.sleep(5)  # Para ver la base de datos vacía
+time.sleep(2)  # Para ver la base de datos vacía
 
 # Start the client shells
 processes = []
@@ -82,9 +82,11 @@ for i in range(n_processes):
 for i in range (len(instructions[0])):
     for j in range(n_processes):
         send_instruction(instructions[j][i], processes[j])
-        time.sleep(0.5)
+        time.sleep(0.01)
 
 
 # Close the client shells
 for process in processes:
     process.stdin.close()
+
+print("Procesos cerrados")

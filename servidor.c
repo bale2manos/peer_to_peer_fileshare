@@ -46,15 +46,12 @@ void print_rpc_servidor(char *string_to_print)
 
 void send_result(int sc, int res) {
     char res_str[BUFFER_SIZE];
-    printf("Socket %d hasta 49\n", sc);
     sprintf(res_str, "%d", res);
-    printf("Socket %d hasta 51\n", sc);
     if (writeLine(sc, res_str) < 0) {
         printf("ERROR ERROR ERROR\n");
         perror("Error sending result\n");
         exit(0);
     }
-    printf("Socket %d hasta 55\n", sc);
 }
 
 int get_client_address(int sc, char *address, size_t addr_size) {
