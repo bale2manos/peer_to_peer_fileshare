@@ -109,12 +109,9 @@ int sendMessage ( int socket, char * buffer, int len )
 {
     int r;
     int l = len;
-    printf("Send %s (len %d) al socket %d\n", buffer, len, socket);
     do
     {
-        printf("Voy a escribir %d bytes\n", l);
         r = write(socket, buffer, l);
-        printf("Escribí %d bytes\n", r) ;
         if (r < 0){
             printf("Error en write\n");
             return (-1);   /* fail */
@@ -147,7 +144,6 @@ int recvMessage ( int socket, char *buffer, int len )
 
 ssize_t writeLine ( int fd, char *buffer )
 {
-    printf("writeLine: %s\n", buffer);
     return sendMessage(fd, buffer, strlen(buffer)+1) ;
 }
 

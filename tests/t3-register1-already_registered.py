@@ -29,18 +29,15 @@ try:
 except FileNotFoundError:
     pass
 
-print("Borrando base de datos")
-time.sleep(5)  # Para ver la base de datos vacía
-
 # Start the client shells
 processes = []
 output_threads = []
 error_threads = []
-correct_processes_calls = ['python3', 'client.py', '-s', 'localhost' ,'-p', '4500']
-n_processes = 100
+processes_calls = [['python3', 'client.py', '-s', 'localhost' ,'-p', '4500'],
+                   ['python3', 'client.py', '-s', 'localhost' ,'-p', '4500']]
 
-for _ in range(n_processes):
-    process = subprocess.Popen(correct_processes_calls, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+for args in processes_calls:
+    process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     processes.append(process)
 
     # Start a separate thread to print output and errors
@@ -55,34 +52,18 @@ for _ in range(n_processes):
 # Wait for the client shells to start
 time.sleep(1)  # Adjust this delay according to your project's startup time
 
-instructions = []
-half_processes = n_processes/2
-for i in range(n_processes):
-    # Define instructions for each process, do REGISTER usuario + n_process
-    user = "usuario" + str(i)
-    if (i < half_processes):
-        neighbor = int(i + half_processes)
-        process_instr = ["REGISTER " + user,
-                         "CONNECT " + user,
-                         "PUBLISH title" + str(i) + " content of the file" + str(i),
-                         "LIST_USERS",
-                         "GET_FILE usuario" + str(neighbor) + " title" + str(neighbor) + " copia" +str(neighbor),
-                         "QUIT"]
-    else:
-        neighbor = int(i - half_processes)
-        process_instr = ["REGISTER " + user,
-                         "CONNECT " + user,
-                         "PUBLISH title" + str(i) + " content of the file" + str(i),
-                         "LIST_CONTENT usuario" + str(neighbor),
-                         "GET_FILE usuario" + str(neighbor) + " title" + str(neighbor) + " copia" +str(neighbor),
-                         "QUIT"]
-    instructions.append(process_instr)
+# Define instructions with delays
+instructions = [
+        ["REGISTER usuario1", "QUIT"],
+        ["REGISTER usuario1", "QUIT"]
+]
 
 # Send instructions with a delay of 3 seconds between each
 for i in range (len(instructions[0])):
-    for j in range(n_processes):
+    for j in range(len(instructions)):
         send_instruction(instructions[j][i], processes[j])
-        time.sleep(0.5)
+        time.sleep(0.2)
+
 
 
 # Close the client shells

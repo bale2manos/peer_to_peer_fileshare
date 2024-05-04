@@ -301,6 +301,8 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
+        printf("Owner: %s\n", owner);
+        printf("Username: %s\n", username);
         res = handle_get_file(username, owner, client_address, &client_port);
     } else {
         printf("Operación no reconocida\n");
@@ -310,7 +312,10 @@ void *tratar_peticion(void *sc_ptr) {
 
 
     send_result(sc, res);
-
+    if (res != 0) {
+        close(sc);
+        pthread_exit(NULL);
+    }
 
     if (strcmp(operation, "LIST_USERS") == 0){
         printf("Socket: %d\n", sc);

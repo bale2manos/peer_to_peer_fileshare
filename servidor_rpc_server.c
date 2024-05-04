@@ -9,11 +9,11 @@
 bool_t
 print_rpc_1_svc(char *arg1, int *result,  struct svc_req *rqstp)
 {
-	bool_t retval;
+
 
     printf("%s\n", arg1);
 
-	return retval;
+	return 1;
 }
 
 int

@@ -38,9 +38,8 @@ class client :
         try:
             client._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client._sock.connect((client._server, client._port))
-            print("Connected to server: " + client._server + " on port: " + str(client._port))
         except Exception as e:
-            print("Exception: " + str(e))
+            print("Exception connect_to_server: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -83,18 +82,14 @@ class client :
     def listen_for_connections(listening_socket):
         try:
             listening_socket.listen(1)
-            print("Listening socket is:" + str(listening_socket))
-            print("Listening for incoming connections on port: " + str(listening_socket.getsockname()[1]))
 
             while client._conectado:
                 # Accept incoming connections
                 try:
                     connection, address = listening_socket.accept()
-                    print("Connection received from: " + str(address))
                 except Exception as e:
                     # If errno 22 is raised, it means that the socket has been closed
                     if e.errno == 22:
-                        print("Socket closed, thread finished")
                         break
                     print("Error accepting connection: ", e)
                     continue
@@ -105,11 +100,9 @@ class client :
                 operation = b''
                 while True:
                     msg = connection.recv(1)
-                    print("Received: " + str(msg))
                     if (msg == b'\0'):
                         break
                     operation += msg
-                print("Received operation: " + operation.decode())
 
                 # If the data is 'GET_FILE', send the file
                 if operation.decode() == 'GET_FILE':
@@ -144,7 +137,7 @@ class client :
             # exit thread
             print("Listening thread finished")
         except Exception as e:
-            print("Exception: " + str(e))
+            print("Exception listening_for_connections: " + str(e))
 
 
     @staticmethod
@@ -166,7 +159,7 @@ class client :
                 connection.send(b'\0')
             print("File sent")
         except Exception as e:
-            print("Exception: " + str(e))
+            print("Exception send_file " + str(e))
 
     @staticmethod
     def  register(user) :
@@ -198,7 +191,7 @@ class client :
             client._sock.close()
             return client.RC(response)
         except Exception as e:
-            print("Exception: " + str(e))
+            print("Exception register: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -234,7 +227,7 @@ class client :
             client._sock.close()
             return client.RC(response)
         except Exception as e:
-            print("Exception: " + str(e))
+            print("Exception unregister: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -280,7 +273,6 @@ class client :
             client._sock.sendall(user.encode() + b'\0')
 
             # Send listening port
-            print("Listening port: " + str(client._listening_socket.getsockname()[1]))
             client._sock.sendall(str(client._listening_socket.getsockname()[1]).encode() + b'\0')
 
             # Receive response
@@ -298,7 +290,7 @@ class client :
             client._sock.close()
             return client.RC(response)
         except Exception as e:
-            print("Exception: " + str(e))
+            print(" Exception connect: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -313,42 +305,38 @@ class client :
         try:
             # Parar la ejecución del hilo y destruirlo
             client._conectado = False
-            print("Socket del cliente con el servidor: ", client._sock)
-            print("Socket de escucha: ", client._listening_socket)
 
             # Cerrar el socket de escucha y esperar a que el hilo termine con manejo de errores
             if client._listening_socket:
                 client._listening_socket.shutdown(socket.SHUT_RDWR) # TODO comentar en la memoria
                 client._listening_socket.close()
-                print("Listening socket closed")
-            print("Listening thread: " + str(client._listening_thread))
 
-            print("Client disconnected sent to server")
             # Send DISCONNECT command
-            client._sock.sendall(b'DISCONNECT\0')
-            c_timestamp = client.get_current_timestamp()
+            if user:
+                client._sock.sendall(b'DISCONNECT\0')
+                c_timestamp = client.get_current_timestamp()
 
-            client._sock.sendall(c_timestamp.encode() + b'\0')
+                client._sock.sendall(c_timestamp.encode() + b'\0')
 
-            print("User: " + user)
+                print("User: " + user)
 
-            # Send user name
-            client._sock.sendall(user.encode() + b'\0')
+                # Send user name
+                client._sock.sendall(user.encode() + b'\0')
 
-            # Receive response
-            response = int(client.readString())
-            if response == client.RC.OK.value:
-                print("DISCONNECT OK")
-            elif response == client.RC.ERROR.value:
-                print("DISCONNECT FAIL / USER DOES NOT EXIST")
-            elif response == client.RC.USER_ERROR.value:
-                print("DISCONNECT FAIL / USER NOT CONNECTED")
-            else:
-                print("DISCONNECT FAIL")
-            client._sock.close()
-            return client.RC(response)
+                # Receive response
+                response = int(client.readString())
+                if response == client.RC.OK.value:
+                    print("DISCONNECT OK")
+                elif response == client.RC.ERROR.value:
+                    print("DISCONNECT FAIL / USER DOES NOT EXIST")
+                elif response == client.RC.USER_ERROR.value:
+                    print("DISCONNECT FAIL / USER NOT CONNECTED")
+                else:
+                    print("DISCONNECT FAIL")
+                client._sock.close()
+                return client.RC(response)
         except Exception as e:
-            print("Exception: " + str(e))
+            print("Exception Disconnect: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -393,7 +381,7 @@ class client :
             client._sock.close()
             return client.RC(response)
         except Exception as e:
-            print("Exception: " + str(e))
+            print("Exception publish: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -434,7 +422,7 @@ class client :
             client._sock.close()
             return client.RC(response)
         except Exception as e:
-            print("Exception: " + str(e))
+            print("Exception delete: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -483,7 +471,7 @@ class client :
             client._sock.close()
             return client.RC(response)
         except Exception as e:
-            print("Exception: " + str(e))
+            print("Exception list_users: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -528,7 +516,7 @@ class client :
             client._sock.close()
             return client.RC(response)
         except:
-            print("Exception: " + str(e))
+            print("Exception list_content: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -566,22 +554,16 @@ class client :
                 client_address = client.readString()
                 client_port = int(client.readString())
                 client._sock.close()
-                print("Client address: " + client_address)
-                print("Client port: " + str(client_port))
 
             else: # User in list of users
-                print("User in list of users")
                 client_address = client._list_users[user][0]
                 client_port = int(client._list_users[user][1])
-                print("Client address: " + client_address)
-                print("Client port: " + str(client_port))
 
             # Connect to client
             try:
                 # Connect to the client
                 client._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 client._sock.connect((client_address, client_port))
-                print("Connected to client: " + client_address + " on port: " + str(client_port))
             except:
                 # If Ip has changed try to get the new ip
                 # SEND GET_FILE command
@@ -624,9 +606,7 @@ class client :
             client._sock.sendall(remote_FileName.encode() + b'\0')
 
             # Receive response
-            print("I will receive the response at: " + str(client._sock.getsockname()))
             client_response = int(client.readString())
-            print("Client response: " + str(client_response))
 
             if client_response == client.RC.OK.value:
                 print("GET_FILE OK")
@@ -644,7 +624,7 @@ class client :
             client._sock.close()
             return client.RC(client_response)
         except Exception as e:
-            print("Exception: " + str(e))
+            print("Exception get_file: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -734,7 +714,7 @@ class client :
                     else :
                         print("Error: command " + line[0] + " not valid.")
             except Exception as e:
-                print("Exception: " + str(e))
+                print("Exception shell: " + str(e))
                 break
 
 
