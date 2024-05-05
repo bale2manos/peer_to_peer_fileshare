@@ -174,7 +174,7 @@ int handle_publish(char *userName, char *fileName, char *description) {
     snprintf(new_file_path, sizeof(new_file_path), "%s/files/%s", user, fileName);
 
     // Comprobar si el archivo ya existe
-    if (access (new_file_path, F_OK) != -1) {
+    if (access(new_file_path, F_OK) != -1) {
         perror("Error: file already exists");
         return 3;
     }
@@ -388,7 +388,7 @@ int handle_list_content(char *username, char *owner, int *num_content, FILE *con
             fprintf(content_list, "\t%s", entry->d_name);
             (*num_content)++;
             // Open file and write its content to content_list
-            char file_path[MAX_FILEPATH_LENGTH*2+6];
+            char file_path[MAX_FILEPATH_LENGTH * 2 + 6];
             snprintf(file_path, sizeof(file_path), "%s/files/%s", owner_path, entry->d_name);
             FILE *file = fopen(file_path, "r");
             if (file == NULL) {
@@ -412,7 +412,7 @@ int handle_list_content(char *username, char *owner, int *num_content, FILE *con
     return 0;
 }
 
-int handle_disconnect (char* user){
+int handle_disconnect(char *user) {
     char user_register[MAX_FILEPATH_LENGTH];
     snprintf(user_register, sizeof(user_register), "%s%s", DATA_DIRECTORY, user);
     if (access(user_register, F_OK) == -1) {
@@ -435,7 +435,7 @@ int handle_disconnect (char* user){
     return 0;
 }
 
-int handle_get_file(char* username, char* owner, char* address, int* port){
+int handle_get_file(char *username, char *owner, char *address, int *port) {
     char user[MAX_FILEPATH_LENGTH];
     snprintf(user, sizeof(user), "%s%s", DATA_DIRECTORY, username);
 

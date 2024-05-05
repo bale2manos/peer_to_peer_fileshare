@@ -4,6 +4,8 @@ from spyne import Application, ServiceBase, Integer, Unicode, rpc, String
 from spyne.protocol.soap import Soap11
 from spyne.server.wsgi import WsgiApplication
 from datetime import datetime
+
+
 class Current_TimeStamp(ServiceBase):
     @rpc(_returns=String)
     def take_timestamp(ctx):
@@ -11,6 +13,7 @@ class Current_TimeStamp(ServiceBase):
         formatted_time = current_time.strftime("%d/%m/%Y %H:%M:%S")
         print("Fecha y hora actual formateadas:", formatted_time)
         return formatted_time
+
 
 application = Application(services=[Current_TimeStamp], tns='http://tests.python-zeep.org/',
                           in_protocol=Soap11(validator='lxml'), out_protocol=Soap11())

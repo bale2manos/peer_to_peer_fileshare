@@ -2,6 +2,7 @@ import subprocess
 import time
 import threading
 
+
 # Function to send instructions to the client shell and print them
 def send_instruction(instruction, process):
     process.stdin.write(instruction + '\n')
@@ -14,11 +15,13 @@ def print_output(process):
     for line in process.stdout:
         print(line.strip())
 
+
 # Function to handle errors and print stderr output
 def print_errors(process):
     for line in process.stderr:
         print(line.strip())
     process.stderr.close()
+
 
 # Remove all the files and subfolders of ../database
 subprocess.run(['rm', '-rf', './database'])
@@ -34,8 +37,8 @@ except FileNotFoundError:
 processes = []
 output_threads = []
 error_threads = []
-processes_calls = [['python3', 'client.py', '-s', 'localhost' ,'-p', '4500'],
-                   ['python3', 'client.py', '-s', 'localhost' ,'-p', '4500']]
+processes_calls = [['python3', 'client.py', '-s', 'localhost', '-p', '4500'],
+                   ['python3', 'client.py', '-s', 'localhost', '-p', '4500']]
 
 for args in processes_calls:
     process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -55,18 +58,16 @@ time.sleep(1)  # Adjust this delay according to your project's startup time
 
 # Define instructions with delays
 instructions = [
-        ["REGISTER usuario1", "CONNECT usuario1", "PUBLISH title1 description1", "PUBLISH title2 description1", "QUIT"],
-        ["REGISTER usuario2", "CONNECT usuario2", "LIST_CONTENT usuario1", "GET_FILE usuario1 title300 title1copia", "QUIT"]
+    ["REGISTER usuario1", "CONNECT usuario1", "PUBLISH title1 description1", "PUBLISH title2 description1", "QUIT"],
+    ["REGISTER usuario2", "CONNECT usuario2", "LIST_CONTENT usuario1", "GET_FILE usuario1 title300 title1copia", "QUIT"]
 
 ]
 
 # Send instructions with a delay of 3 seconds between each
-for i in range (len(instructions[0])):
+for i in range(len(instructions[0])):
     for j in range(len(instructions)):
         send_instruction(instructions[j][i], processes[j])
         time.sleep(0.2)
-
-
 
 # Close the client shells
 for process in processes:

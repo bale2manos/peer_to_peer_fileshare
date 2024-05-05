@@ -21,34 +21,30 @@ pthread_attr_t thread_attr;
 int sd;
 
 
-
-
-void print_rpc_servidor(char *string_to_print)
-{
+void print_rpc_servidor(char *string_to_print) {
     CLIENT *clnt;
     enum clnt_stat retval_1;
     int result_1;
 
-    char * host = "localhost";
+    char *host = "localhost";
 
-    clnt = clnt_create (host, SERVIDOR_RPC, VERSION_RPC, "tcp");
+    clnt = clnt_create(host, SERVIDOR_RPC, VERSION_RPC, "tcp");
     if (clnt == NULL) {
-        clnt_pcreateerror (host);
-        exit (1);
+        clnt_pcreateerror(host);
+        exit(1);
     }
 
     retval_1 = print_rpc_1(string_to_print, &result_1, clnt);
     if (retval_1 != RPC_SUCCESS) {
-        clnt_perror (clnt, "call failed");
+        clnt_perror(clnt, "call failed");
     }
-    clnt_destroy (clnt);
+    clnt_destroy(clnt);
 }
 
 
-void send_info_to_rpc(char *username, char *operation, char *c_time_string)
-{
-    char rpc_string[2*BUFFER_SIZE+103];
-    sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+void send_info_to_rpc(char *username, char *operation, char *c_time_string) {
+    char rpc_string[2 * BUFFER_SIZE + 103];
+    sprintf(rpc_string, "%s %s %s", username, operation, c_time_string);
     print_rpc_servidor(rpc_string);
 }
 
@@ -124,7 +120,7 @@ void *tratar_peticion(void *sc_ptr) {
     int res = 0;
     char c_time_string[100];
     char owner[BUFFER_SIZE];
-    if(strcmp(operation, "GET_FILE") != 0){
+    if (strcmp(operation, "GET_FILE") != 0) {
 
         ret = readLine(sc, c_time_string, 100);
         if (ret < 0) {
@@ -275,7 +271,7 @@ void *tratar_peticion(void *sc_ptr) {
             pthread_exit(NULL);
         }
 
-        char user_list_name[MAX_FILEPATH_LENGTH*3];
+        char user_list_name[MAX_FILEPATH_LENGTH * 3];
         sprintf(user_list_name, "%s_users_connected.txt", username);
         FILE *user_list = fopen(user_list_name, "w");
         if (user_list == NULL) {
@@ -287,7 +283,7 @@ void *tratar_peticion(void *sc_ptr) {
         }
         res = handle_list_users(username, &n_users, user_list);
         fclose(user_list);
-    } else if (strcmp(operation, "LIST_CONTENT") == 0){
+    } else if (strcmp(operation, "LIST_CONTENT") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción LIST_USERS\n");
             pthread_mutex_unlock(&file_mutex);
@@ -315,7 +311,7 @@ void *tratar_peticion(void *sc_ptr) {
             pthread_exit(NULL);
         }
 
-        char user_content_name[MAX_FILEPATH_LENGTH*3];
+        char user_content_name[MAX_FILEPATH_LENGTH * 3];
         sprintf(user_content_name, "%s%s_content.txt", username, owner);
         FILE *user_content = fopen(user_content_name, "w");
         if (user_content == NULL) {
@@ -328,7 +324,7 @@ void *tratar_peticion(void *sc_ptr) {
 
         res = handle_list_content(username, owner, &n_content, user_content);
         fclose(user_content);
-    } else if (strcmp(operation, "DISCONNECT") == 0){
+    } else if (strcmp(operation, "DISCONNECT") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción DISCONNECT\n");
             pthread_mutex_unlock(&file_mutex);
@@ -349,7 +345,7 @@ void *tratar_peticion(void *sc_ptr) {
 
 
         res = handle_disconnect(username);
-    } else if (strcmp(operation, "GET_FILE") == 0){
+    } else if (strcmp(operation, "GET_FILE") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción GET_FILE\n");
             pthread_mutex_unlock(&file_mutex);
@@ -389,12 +385,12 @@ void *tratar_peticion(void *sc_ptr) {
         pthread_exit(NULL);
     }
 
-    if (strcmp(operation, "LIST_USERS") == 0){
+    if (strcmp(operation, "LIST_USERS") == 0) {
         printf("Socket: %d\n", sc);
         send_result(sc, n_users);
 
         pthread_mutex_lock(&file_mutex);
-        char users_connected_path[MAX_FILEPATH_LENGTH*2];
+        char users_connected_path[MAX_FILEPATH_LENGTH * 2];
         sprintf(users_connected_path, "%s_users_connected.txt", username);
         if (access(users_connected_path, F_OK) == -1) {
             perror("Error accessing file");
@@ -454,13 +450,12 @@ void *tratar_peticion(void *sc_ptr) {
         }
         pthread_mutex_unlock(&file_mutex);
         printf("TODO BIEN ENVIADo\n");
-    }
-    else if (strcmp(operation, "LIST_CONTENT") == 0){
+    } else if (strcmp(operation, "LIST_CONTENT") == 0) {
         printf("Socket: %d\n", sc);
         send_result(sc, n_content);
         pthread_mutex_lock(&file_mutex);
 
-        char user_content_name[MAX_FILEPATH_LENGTH*3];
+        char user_content_name[MAX_FILEPATH_LENGTH * 3];
         sprintf(user_content_name, "%s%s_content.txt", username, owner);
         FILE *user_content = fopen(user_content_name, "r");
         printf("Sending user content\n");
@@ -508,8 +503,7 @@ void *tratar_peticion(void *sc_ptr) {
             pthread_exit(NULL);
         }
         pthread_mutex_unlock(&file_mutex);
-    }
-    else if (strcmp(operation, "GET_FILE") == 0){
+    } else if (strcmp(operation, "GET_FILE") == 0) {
         // Send client address and port
         printf("Sending client address and port\n");
         printf("Address: %s\n", client_address);

@@ -2,6 +2,7 @@ import subprocess
 import time
 import threading
 
+
 # Function to send instructions to the client shell and print them
 def send_instruction(instruction, process):
     process.stdin.write(instruction + '\n')
@@ -14,11 +15,13 @@ def print_output(process):
     for line in process.stdout:
         print(line.strip())
 
+
 # Function to handle errors and print stderr output
 def print_errors(process):
     for line in process.stderr:
         print(line.strip())
     process.stderr.close()
+
 
 # Remove all the files and subfolders of ../database
 subprocess.run(['rm', '-rf', './database'])
@@ -36,11 +39,12 @@ time.sleep(2)  # Para ver la base de datos vacía
 processes = []
 output_threads = []
 error_threads = []
-correct_processes_calls = ['python3', 'client.py', '-s', 'localhost' ,'-p', '4500']
+correct_processes_calls = ['python3', 'client.py', '-s', 'localhost', '-p', '4500']
 n_processes = 100
 
 for _ in range(n_processes):
-    process = subprocess.Popen(correct_processes_calls, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    process = subprocess.Popen(correct_processes_calls, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, text=True)
     processes.append(process)
 
     # Start a separate thread to print output and errors
@@ -56,7 +60,7 @@ for _ in range(n_processes):
 time.sleep(1)  # Adjust this delay according to your project's startup time
 
 instructions = []
-half_processes = n_processes/2
+half_processes = n_processes / 2
 for i in range(n_processes):
     # Define instructions for each process, do REGISTER usuario + n_process
     user = "usuario" + str(i)
@@ -66,7 +70,7 @@ for i in range(n_processes):
                          "CONNECT " + user,
                          "PUBLISH title" + str(i) + " content of the file" + str(i),
                          "LIST_USERS",
-                         "GET_FILE usuario" + str(neighbor) + " title" + str(neighbor) + " copia" +str(neighbor),
+                         "GET_FILE usuario" + str(neighbor) + " title" + str(neighbor) + " copia" + str(neighbor),
                          "QUIT"]
     else:
         neighbor = int(i - half_processes)
@@ -74,16 +78,15 @@ for i in range(n_processes):
                          "CONNECT " + user,
                          "PUBLISH title" + str(i) + " content of the file" + str(i),
                          "LIST_CONTENT usuario" + str(neighbor),
-                         "GET_FILE usuario" + str(neighbor) + " title" + str(neighbor) + " copia" +str(neighbor),
+                         "GET_FILE usuario" + str(neighbor) + " title" + str(neighbor) + " copia" + str(neighbor),
                          "QUIT"]
     instructions.append(process_instr)
 
 # Send instructions with a delay of 3 seconds between each
-for i in range (len(instructions[0])):
+for i in range(len(instructions[0])):
     for j in range(n_processes):
         send_instruction(instructions[j][i], processes[j])
         time.sleep(0.01)
-
 
 # Close the client shells
 for process in processes:

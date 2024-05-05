@@ -5,12 +5,12 @@ import threading
 import os
 import zeep
 
-class client :
 
+class client:
     # ******************** TYPES *********************
     # *
     # * @brief Return codes for the protocol methods
-    class RC(Enum) :
+    class RC(Enum):
         OK = 0
         ERROR = 1
         USER_ERROR = 2
@@ -31,6 +31,7 @@ class client :
         except:
             _username = None
     _list_users = {}
+
     # ******************** METHODS *******************
 
     @staticmethod
@@ -39,7 +40,7 @@ class client :
             client._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client._sock.connect((client._server, client._port))
         except Exception as e:
-            #print("Exception connect_to_server: " + str(e))
+            # print("Exception connect_to_server: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -50,7 +51,6 @@ class client :
         soap = zeep.Client(wsdl=wsdl_url)
         result = soap.service.take_timestamp()
         return result
-
 
     @staticmethod
     def readString():
@@ -95,7 +95,6 @@ class client :
                     continue
                 # Get port to send from the address
 
-
                 # Receive first word, read from the connection until the first space
                 operation = b''
                 while True:
@@ -135,7 +134,6 @@ class client :
         except Exception as e:
             print("Exception listening_for_connections: " + str(e))
 
-
     @staticmethod
     def send_file(connection, file_name):
         try:
@@ -153,7 +151,7 @@ class client :
             print("Exception send_file " + str(e))
 
     @staticmethod
-    def  register(user) :
+    def register(user):
         #  Write your code here
         if client.connect_to_server() == client.RC.ERROR:
             print("REGISTER FAIL")
@@ -190,9 +188,8 @@ class client :
                 client._sock.close()
             return client.RC.ERROR
 
-
     @staticmethod
-    def  unregister(user) :
+    def unregister(user):
         #  Write your code here
         if client.connect_to_server() == client.RC.ERROR:
             print("UNREGISTER FAIl")
@@ -229,28 +226,26 @@ class client :
                 client._sock.close()
             return client.RC.ERROR
 
-
     @staticmethod
     def connect(user):
         try:
 
             # TODO logica y permisos de que usuario se conecta
 
-
             # Obtain a free port
-            listening_port = client.get_free_port() # TODO revisar si es necesario
+            listening_port = client.get_free_port()  # TODO revisar si es necesario
 
             # Create a new socket
             client._listening_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
             # Create a new thread to listen for incoming connections in that socket
             client._conectado = True
-            client._listening_thread = threading.Thread(target=client.listen_for_connections, args=(client._listening_socket,), )
+            client._listening_thread = threading.Thread(target=client.listen_for_connections,
+                                                        args=(client._listening_socket,), )
             client._listening_thread.daemon = True
 
             if client._listening_socket:
-                client._listening_thread.start() # TODO inicia el hilo aunque ya existiera o aunque no este registrado
-
+                client._listening_thread.start()  # TODO inicia el hilo aunque ya existiera o aunque no este registrado
 
             # Establish a connection with the server
             res = client.connect_to_server()
@@ -279,14 +274,14 @@ class client :
 
             if response == client.RC.OK.value:
                 print("CONNECT OK")
-                #We store the name of the user in the client
+                # We store the name of the user in the client
                 client._username = user
                 with open("current_username.txt", "w") as file:
                     file.write(user)
             elif response == client.RC.ERROR.value:
                 print("CONNECT FAIL, USER DOES NOT EXIST")
                 if client._listening_socket:
-                    client._listening_socket.shutdown(socket.SHUT_RDWR) # TODO comentar en la memoria
+                    client._listening_socket.shutdown(socket.SHUT_RDWR)  # TODO comentar en la memoria
                     client._listening_socket.close()
                     client._listening_socket = None
             elif response == client.RC.USER_ERROR.value:
@@ -311,7 +306,7 @@ class client :
             return client.RC.ERROR
 
     @staticmethod
-    def  disconnect(user) :
+    def disconnect(user):
         #  Write your code here
         if client.connect_to_server() == client.RC.ERROR:
             print("DISCONNECT FAIL")
@@ -323,7 +318,7 @@ class client :
 
             # Cerrar el socket de escucha y esperar a que el hilo termine con manejo de errores
             if client._listening_socket:
-                client._listening_socket.shutdown(socket.SHUT_RDWR) # TODO comentar en la memoria
+                client._listening_socket.shutdown(socket.SHUT_RDWR)  # TODO comentar en la memoria
                 client._listening_socket.close()
                 client._listening_socket = None
 
@@ -333,7 +328,6 @@ class client :
                 c_timestamp = client.get_current_timestamp()
 
                 client._sock.sendall(c_timestamp.encode() + b'\0')
-
 
                 # Send user name
                 client._sock.sendall(user.encode() + b'\0')
@@ -357,9 +351,8 @@ class client :
                 client._sock.close()
             return client.RC.ERROR
 
-
     @staticmethod
-    def  publish(fileName,  description) :
+    def publish(fileName, description):
         if client.connect_to_server() == client.RC.ERROR:
             print("PUBLISH FAIL")
             return client.RC.ERROR
@@ -379,7 +372,6 @@ class client :
                 client._sock.sendall(user.encode() + b'\0')
             else:
                 client._sock.sendall(b'__NO_USER__\0')
-
 
             # Send fileName
             client._sock.sendall(fileName.encode() + b'\0')
@@ -409,7 +401,7 @@ class client :
             return client.RC.ERROR
 
     @staticmethod
-    def  delete(fileName) :
+    def delete(fileName):
         if client.connect_to_server() == client.RC.ERROR:
             print("DELETE FAIL")
             return client.RC.ERROR
@@ -455,7 +447,7 @@ class client :
             return client.RC.ERROR
 
     @staticmethod
-    def  listusers() :
+    def listusers():
         #  Write your code here
         if client.connect_to_server() == client.RC.ERROR:
             print("LIST_USERS FAIL")
@@ -501,7 +493,6 @@ class client :
             else:
                 print("LIST_USERS FAIL")
 
-
             client._sock.close()
             return client.RC(response)
         except Exception as e:
@@ -511,7 +502,7 @@ class client :
             return client.RC.ERROR
 
     @staticmethod
-    def  listcontent(owner) :
+    def listcontent(owner):
         #  Write your code here
         if client.connect_to_server() == client.RC.ERROR:
             print("LIST_CONTENT FAIL")
@@ -562,12 +553,10 @@ class client :
                 client._sock.close()
             return client.RC.ERROR
 
-
-
         return client.RC.ERROR
 
     @staticmethod
-    def  getfile(owner,  remote_FileName,  local_FileName) :
+    def getfile(owner, remote_FileName, local_FileName):
         # Send user operating
         user = client._username
         try:
@@ -584,7 +573,6 @@ class client :
                     client._sock.sendall(user.encode() + b'\0')
                 else:
                     client._sock.sendall(b'\0')
-
 
                 # Send user owner
                 if owner:
@@ -604,7 +592,7 @@ class client :
                 client_port = int(client.readString())
                 client._sock.close()
 
-            else: # User in list of users
+            else:  # User in list of users
                 client_address = client._list_users[owner][0]
                 client_port = int(client._list_users[owner][1])
 
@@ -679,18 +667,14 @@ class client :
                 client._sock.close()
             return client.RC.ERROR
 
-
-
-
-
     # *
     # **
     # * @brief Command interpreter for the client. It calls the protocol functions.
     @staticmethod
     def shell():
 
-        while (True) :
-            try :
+        while (True):
+            try:
                 command = input("c> ")
                 if not command:
                     continue
@@ -699,86 +683,84 @@ class client :
 
                     line[0] = line[0].upper()
 
-                    if (line[0]=="REGISTER") :
-                        if (len(line) == 2) :
+                    if (line[0] == "REGISTER"):
+                        if (len(line) == 2):
                             client.register(line[1])
-                        else :
+                        else:
                             print("Syntax error. Usage: REGISTER <userName>")
 
-                    elif(line[0]=="UNREGISTER") :
-                        if (len(line) == 2) :
+                    elif (line[0] == "UNREGISTER"):
+                        if (len(line) == 2):
                             client.unregister(line[1])
-                        else :
+                        else:
                             print("Syntax error. Usage: UNREGISTER <userName>")
 
-                    elif(line[0]=="CONNECT") :
-                        if (len(line) == 2) :
+                    elif (line[0] == "CONNECT"):
+                        if (len(line) == 2):
                             client.connect(line[1])
-                        else :
+                        else:
                             print("Syntax error. Usage: CONNECT <userName>")
 
-                    elif(line[0]=="PUBLISH") :
-                        if (len(line) >= 3) :
+                    elif (line[0] == "PUBLISH"):
+                        if (len(line) >= 3):
                             #  Remove first two words
                             description = ' '.join(line[2:])
                             client.publish(line[1], description)
-                        else :
+                        else:
                             print("Syntax error. Usage: PUBLISH <fileName> <description>")
 
-                    elif(line[0]=="DELETE") :
-                        if (len(line) == 2) :
+                    elif (line[0] == "DELETE"):
+                        if (len(line) == 2):
                             client.delete(line[1])
-                        else :
+                        else:
                             print("Syntax error. Usage: DELETE <fileName>")
 
-                    elif(line[0]=="LIST_USERS") :
-                        if (len(line) == 1) :
+                    elif (line[0] == "LIST_USERS"):
+                        if (len(line) == 1):
                             client.listusers()
-                        else :
+                        else:
                             print("Syntax error. Use: LIST_USERS")
 
-                    elif(line[0]=="LIST_CONTENT") :
-                        if (len(line) == 2) :
+                    elif (line[0] == "LIST_CONTENT"):
+                        if (len(line) == 2):
                             client.listcontent(line[1])
-                        else :
+                        else:
                             print("Syntax error. Usage: LIST_CONTENT <userName>")
 
-                    elif(line[0]=="DISCONNECT") :
-                        if (len(line) == 2) :
+                    elif (line[0] == "DISCONNECT"):
+                        if (len(line) == 2):
                             client.disconnect(line[1])
-                        else :
+                        else:
                             print("Syntax error. Usage: DISCONNECT <userName>")
 
-                    elif(line[0]=="GET_FILE") :
-                        if (len(line) == 4) :
+                    elif (line[0] == "GET_FILE"):
+                        if (len(line) == 4):
                             client.getfile(line[1], line[2], line[3])
-                        else :
+                        else:
                             print("Syntax error. Usage: GET_FILE <userName> <remote_fileName> <local_fileName>")
 
-                    elif(line[0]=="QUIT") :
-                        if (len(line) == 1) :
+                    elif (line[0] == "QUIT"):
+                        if (len(line) == 1):
                             client.disconnect(client._username)
                             break
-                        else :
+                        else:
                             print("Syntax error. Use: QUIT")
-                    else :
+                    else:
                         print("Error: command " + line[0] + " not valid.")
             except Exception as e:
                 print("Exception shell: " + str(e))
                 break
 
-
     # *
     # * @brief Prints program usage
     @staticmethod
-    def usage() :
+    def usage():
         print("Usage: python3 client.py -s <server> -p <port>")
-
 
     # *
     # * @brief Parses program execution arguments
     @staticmethod
-    def  parseArguments(argv) :
+    def parseArguments(argv):
         parser = argparse.ArgumentParser()
         parser.add_argument('-s', type=str, required=True, help='Server IP')
         parser.add_argument('-p', type=int, required=True, help='Server Port')
@@ -797,16 +779,10 @@ class client :
 
         return True
 
-
-
-
-
-
-
     # ******************** MAIN *********************
     @staticmethod
-    def main(argv) :
-        if (not client.parseArguments(argv)) :
+    def main(argv):
+        if (not client.parseArguments(argv)):
             client.usage()
             return
 
@@ -814,5 +790,5 @@ class client :
         print("+++ FINISHED +++")
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     client.main([])

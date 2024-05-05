@@ -1,14 +1,13 @@
 #include "comm.h"
 
-int serverSocket ( unsigned int addr, int port, int type )
-{
-    struct sockaddr_in server_addr ;
+int serverSocket(unsigned int addr, int port, int type) {
+    struct sockaddr_in server_addr;
     int sd, ret;
 
     // Crear socket
-    sd = socket(AF_INET, type, 0) ;
+    sd = socket(AF_INET, type, 0);
     if (sd < 0) {
-        printf ("SERVER: Error en el socket\n");
+        printf("SERVER: Error en el socket\n");
         return (0);
     }
 
@@ -17,13 +16,13 @@ int serverSocket ( unsigned int addr, int port, int type )
     setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *) &val, sizeof(int));
 
     // Dirección
-    bzero((char *)&server_addr, sizeof(server_addr));
-    server_addr.sin_family      = AF_INET;
+    bzero((char *) &server_addr, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port        = htons(port);
+    server_addr.sin_port = htons(port);
 
     // Bind
-    ret = bind(sd, (const struct sockaddr *)&server_addr, sizeof(server_addr));
+    ret = bind(sd, (const struct sockaddr *) &server_addr, sizeof(server_addr));
     if (ret == -1) {
         printf("Error en bind\n");
         return -1;
@@ -36,19 +35,18 @@ int serverSocket ( unsigned int addr, int port, int type )
         return -1;
     }
 
-    return sd ;
+    return sd;
 }
 
-int serverAccept ( int sd )
-{
-    int sc ;
-    struct sockaddr_in client_addr ;
-    socklen_t size ;
+int serverAccept(int sd) {
+    int sc;
+    struct sockaddr_in client_addr;
+    socklen_t size;
 
     printf("esperando conexion...\n");
 
-    size = sizeof(client_addr) ;
-    sc = accept(sd, (struct sockaddr *)&client_addr, (socklen_t *)&size);
+    size = sizeof(client_addr);
+    sc = accept(sd, (struct sockaddr *) &client_addr, (socklen_t * ) & size);
     if (sc < 0) {
         printf("Error en accept\n");
         return -1;
@@ -57,12 +55,11 @@ int serverAccept ( int sd )
     printf("conexión aceptada de IP: %s y puerto: %d\n",
            inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
-    return sc ;
+    return sc;
 }
 
-int clientSocket ( char *remote, int port )
-{
-    struct sockaddr_in server_addr ;
+int clientSocket(char *remote, int port) {
+    struct sockaddr_in server_addr;
     struct hostent *hp;
     int sd, ret;
 
@@ -72,61 +69,57 @@ int clientSocket ( char *remote, int port )
         return -1;
     }
 
-    hp = gethostbyname(remote) ;
+    hp = gethostbyname(remote);
     if (hp == NULL) {
         printf("Error en gethostbyname\n");
         return -1;
     }
 
-    bzero((char *)&server_addr, sizeof(server_addr));
-    memcpy (&(server_addr.sin_addr), hp->h_addr, hp->h_length);
-    server_addr.sin_family  = AF_INET;
-    server_addr.sin_port    = htons(port);
+    bzero((char *) &server_addr, sizeof(server_addr));
+    memcpy(&(server_addr.sin_addr), hp->h_addr, hp->h_length);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
 
-    ret = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr));
+    ret = connect(sd, (struct sockaddr *) &server_addr, sizeof(server_addr));
     if (ret < 0) {
         printf("Error en connect\n");
         return -1;
     }
 
-    return sd ;
+    return sd;
 }
 
-int  closeSocket ( int sd )
-{
-    int ret ;
+int closeSocket(int sd) {
+    int ret;
 
-    ret = close(sd) ;
+    ret = close(sd);
     if (ret < 0) {
         perror("close: ");
         return -1;
     }
 
-    return ret ;
+    return ret;
 }
 
-int sendMessage ( int socket, char * buffer, int len )
-{
+int sendMessage(int socket, char *buffer, int len) {
     int r;
     int l = len;
-    do
-    {
+    do {
         r = write(socket, buffer, l);
-        if (r < 0){
+        if (r < 0) {
             printf("Error en write\n");
             return (-1);   /* fail */
         }
-        l = l -r;
+        l = l - r;
         buffer = buffer + r;
         printf("Enviados %d bytes\n", r);
         printf("Faltan enviar %d bytes\n", l);
-    } while ((l>0) && (r>=0));
+    } while ((l > 0) && (r >= 0));
     printf("TODO BIEN\n");
     return 0;
 }
 
-int recvMessage ( int socket, char *buffer, int len )
-{
+int recvMessage(int socket, char *buffer, int len) {
     int r;
     int l = len;
 
@@ -135,20 +128,18 @@ int recvMessage ( int socket, char *buffer, int len )
         if (r < 0)
             return (-1);   /* fail */
 
-        l = l -r ;
+        l = l - r;
         buffer = buffer + r;
 
-    } while ((l>0) && (r>=0));
+    } while ((l > 0) && (r >= 0));
     return 0;
 }
 
-ssize_t writeLine ( int fd, char *buffer )
-{
-    return sendMessage(fd, buffer, strlen(buffer)+1) ;
+ssize_t writeLine(int fd, char *buffer) {
+    return sendMessage(fd, buffer, strlen(buffer) + 1);
 }
 
-ssize_t readLine ( int fd, char *buffer, size_t n )
-{
+ssize_t readLine(int fd, char *buffer, size_t n) {
     ssize_t numRead;  /* num of bytes fetched by last read() */
     size_t totRead;   /* total bytes read so far */
     char *buf;
@@ -162,8 +153,7 @@ ssize_t readLine ( int fd, char *buffer, size_t n )
     buf = buffer;
     totRead = 0;
 
-    while (1)
-    {
+    while (1) {
         numRead = read(fd, &ch, 1);  /* read a byte */
 
         if (numRead == -1) {

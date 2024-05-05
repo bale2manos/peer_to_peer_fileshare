@@ -26,9 +26,13 @@ extern int servidor_rpc_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
 
 #else /* K&R C */
 #define print_rpc 1
-extern  enum clnt_stat print_rpc_1();
-extern  bool_t print_rpc_1_svc();
-extern int servidor_rpc_1_freeresult ();
+
+extern enum clnt_stat print_rpc_1();
+
+extern bool_t print_rpc_1_svc();
+
+extern int servidor_rpc_1_freeresult();
+
 #endif /* K&R C */
 
 #ifdef __cplusplus

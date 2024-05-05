@@ -2,22 +2,26 @@ import subprocess
 import time
 import threading
 
+
 # Function to send instructions to the client shell and print them
 def send_instruction(instruction, process):
     print(instruction)
     process.stdin.write(instruction + '\n')
     process.stdin.flush()
 
+
 # Function to print output from client shell
 def print_output(process):
     for line in process.stdout:
         print(line.strip())
+
 
 # Function to handle errors and print stderr output
 def print_errors(process):
     for line in process.stderr:
         print(line.strip())
     process.stderr.close()
+
 
 # Remove all the files and subfolders of ../database
 subprocess.run(['rm', '-rf', './database'])
@@ -33,7 +37,8 @@ processes = []
 output_threads = []
 error_threads = []
 
-for args in [['python3', 'client.py'], ['python3', 'client.py', '-s', 'localhost'], ['python3', 'client.py', '-p', '4500']]:
+for args in [['python3', 'client.py'], ['python3', 'client.py', '-s', 'localhost'],
+             ['python3', 'client.py', '-p', '4500']]:
     process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     processes.append(process)
 
