@@ -39,7 +39,7 @@ class client :
             client._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client._sock.connect((client._server, client._port))
         except Exception as e:
-            print("Exception connect_to_server: " + str(e))
+            #print("Exception connect_to_server: " + str(e))
             if client._sock:
                 client._sock.close()
             return client.RC.ERROR
@@ -112,21 +112,18 @@ class client :
                         if (msg == b'\0'):
                             break
                         filename += msg.decode()
-                    print("Received file name: " + filename)
                     user_path = '/database/' + client._username
                     file_path = user_path + '/files/' + filename
                     current_path = os.getcwd()
                     path = current_path + file_path
-                    print("Path: " + path)
                     if not os.path.isfile(path):
                         print("File not found")
                         data_to_send = b'1\0'
                         connection.sendall(data_to_send)
                         continue
                     data_to_send = b'0\0'
+                    print("Sending file")
                     connection.sendall(data_to_send)
-                    print(connection.getsockname())
-                    print("Connection address: " + str(connection.getsockname()[0] + ":" + str(connection.getsockname()[1])))
 
                     client.send_file(connection, path)
 
@@ -135,29 +132,23 @@ class client :
                 # Close the connection
                 connection.close()
             # exit thread
-            print("Listening thread finished")
         except Exception as e:
             print("Exception listening_for_connections: " + str(e))
 
 
     @staticmethod
     def send_file(connection, file_name):
-        print("Sending file: " + file_name)
         try:
             # Open the file
             with open(file_name, 'rb') as file:
                 # Read the file
                 data = file.read(1024)
-                print("Data: " + str(data))
 
                 # Send the file
                 while data:
                     connection.send(data)
                     data = file.read(1024)
-                    if data:
-                        print("Data: " + str(data))
                 connection.send(b'\0')
-            print("File sent")
         except Exception as e:
             print("Exception send_file " + str(e))
 
@@ -165,7 +156,7 @@ class client :
     def  register(user) :
         #  Write your code here
         if client.connect_to_server() == client.RC.ERROR:
-            print("Error connecting to server")
+            print("REGISTER FAIL")
             return client.RC.ERROR
 
         try:
@@ -176,8 +167,11 @@ class client :
 
             client._sock.sendall(c_timestamp.encode() + b'\0')
 
-            # Send username
-            client._sock.sendall(user.encode() + b'\0')
+            if user:
+                # Send username
+                client._sock.sendall(user.encode() + b'\0')
+            else:
+                client._sock.sendall(b'__NO_USER__\0')
 
             # Receive response
             response = int(client.readString())
@@ -201,7 +195,7 @@ class client :
     def  unregister(user) :
         #  Write your code here
         if client.connect_to_server() == client.RC.ERROR:
-            print("Error connecting to server")
+            print("UNREGISTER FAIl")
             return client.RC.ERROR
 
         try:
@@ -212,8 +206,11 @@ class client :
 
             client._sock.sendall(c_timestamp.encode() + b'\0')
 
-            # Send username
-            client._sock.sendall(user.encode() + b'\0')
+            if user:
+                # Send username
+                client._sock.sendall(user.encode() + b'\0')
+            else:
+                client._sock.sendall(b'__NO_USER__\0')
 
             # Receive response
             response = int(client.readString())
@@ -236,11 +233,9 @@ class client :
     @staticmethod
     def connect(user):
         try:
-            #We store the name of the user in the client
-            client._username = user
-            with open("current_username.txt", "w") as file:
-                file.write(user)
+
             # TODO logica y permisos de que usuario se conecta
+
 
             # Obtain a free port
             listening_port = client.get_free_port() # TODO revisar si es necesario
@@ -254,11 +249,14 @@ class client :
             client._listening_thread.daemon = True
 
             if client._listening_socket:
-                client._listening_thread.start()
+                client._listening_thread.start() # TODO inicia el hilo aunque ya existiera o aunque no este registrado
 
 
             # Establish a connection with the server
-            client.connect_to_server()
+            res = client.connect_to_server()
+            if res == client.RC.ERROR:
+                print("CONNECT FAIL")
+                return client.RC.ERROR
 
             # Send 'CONNECT' command
             client._sock.sendall(b'CONNECT\0')
@@ -267,10 +265,11 @@ class client :
 
             client._sock.sendall(c_timestamp.encode() + b'\0')
 
-            # Send date
-
-            # Send user name
-            client._sock.sendall(user.encode() + b'\0')
+            if user:
+                # Send username
+                client._sock.sendall(user.encode() + b'\0')
+            else:
+                client._sock.sendall(b'__NO_USER__\0')
 
             # Send listening port
             client._sock.sendall(str(client._listening_socket.getsockname()[1]).encode() + b'\0')
@@ -280,11 +279,27 @@ class client :
 
             if response == client.RC.OK.value:
                 print("CONNECT OK")
+                #We store the name of the user in the client
+                client._username = user
+                with open("current_username.txt", "w") as file:
+                    file.write(user)
             elif response == client.RC.ERROR.value:
                 print("CONNECT FAIL, USER DOES NOT EXIST")
+                if client._listening_socket:
+                    client._listening_socket.shutdown(socket.SHUT_RDWR) # TODO comentar en la memoria
+                    client._listening_socket.close()
+                    client._listening_socket = None
             elif response == client.RC.USER_ERROR.value:
                 print("USER ALREADY CONNECTED")
+                if client._listening_socket:
+                    client._listening_socket.shutdown(socket.SHUT_RDWR)
+                    client._listening_socket.close()
+                    client._listening_socket = None
             else:
+                if client._listening_socket:
+                    client._listening_socket.shutdown(socket.SHUT_RDWR)
+                    client._listening_socket.close()
+                    client._listening_socket = None
                 print("CONNECT FAIL")
 
             client._sock.close()
@@ -299,7 +314,7 @@ class client :
     def  disconnect(user) :
         #  Write your code here
         if client.connect_to_server() == client.RC.ERROR:
-            print("Error connecting to server")
+            print("DISCONNECT FAIL")
             return client.RC.ERROR
 
         try:
@@ -310,15 +325,15 @@ class client :
             if client._listening_socket:
                 client._listening_socket.shutdown(socket.SHUT_RDWR) # TODO comentar en la memoria
                 client._listening_socket.close()
+                client._listening_socket = None
 
             # Send DISCONNECT command
-            if user:
+            if user and client._sock:
                 client._sock.sendall(b'DISCONNECT\0')
                 c_timestamp = client.get_current_timestamp()
 
                 client._sock.sendall(c_timestamp.encode() + b'\0')
 
-                print("User: " + user)
 
                 # Send user name
                 client._sock.sendall(user.encode() + b'\0')
@@ -334,6 +349,7 @@ class client :
                 else:
                     print("DISCONNECT FAIL")
                 client._sock.close()
+                client._sock = None
                 return client.RC(response)
         except Exception as e:
             print("Exception Disconnect: " + str(e))
@@ -345,7 +361,7 @@ class client :
     @staticmethod
     def  publish(fileName,  description) :
         if client.connect_to_server() == client.RC.ERROR:
-            print("Error connecting to server")
+            print("PUBLISH FAIL")
             return client.RC.ERROR
 
         try:
@@ -357,7 +373,13 @@ class client :
             client._sock.sendall(c_timestamp.encode() + b'\0')
 
             # Send userName from attribute
-            client._sock.sendall(client._username.encode() + b'\0')
+            user = client._username
+            if user:
+                # Send username
+                client._sock.sendall(user.encode() + b'\0')
+            else:
+                client._sock.sendall(b'__NO_USER__\0')
+
 
             # Send fileName
             client._sock.sendall(fileName.encode() + b'\0')
@@ -379,7 +401,7 @@ class client :
             else:
                 print("PUBLISH FAIL")
             client._sock.close()
-            return client.RC(response)
+            return response
         except Exception as e:
             print("Exception publish: " + str(e))
             if client._sock:
@@ -389,7 +411,7 @@ class client :
     @staticmethod
     def  delete(fileName) :
         if client.connect_to_server() == client.RC.ERROR:
-            print("Error connecting to server")
+            print("DELETE FAIL")
             return client.RC.ERROR
 
         try:
@@ -400,8 +422,13 @@ class client :
 
             client._sock.sendall(c_timestamp.encode() + b'\0')
 
-            # Send userName from attribute
-            client._sock.sendall(client._username.encode() + b'\0')
+            user = client._username
+            if user:
+                # Send username
+                client._sock.sendall(user.encode() + b'\0')
+            else:
+                # Send a special marker indicating no user
+                client._sock.sendall(b'__NO_USER__\0')
 
             # Send fileName
             client._sock.sendall(fileName.encode() + b'\0')
@@ -420,7 +447,7 @@ class client :
             else:
                 print("DELETE FAIL")
             client._sock.close()
-            return client.RC(response)
+            return response
         except Exception as e:
             print("Exception delete: " + str(e))
             if client._sock:
@@ -431,7 +458,7 @@ class client :
     def  listusers() :
         #  Write your code here
         if client.connect_to_server() == client.RC.ERROR:
-            print("Error connecting to server")
+            print("LIST_USERS FAIL")
             return client.RC.ERROR
 
         try:
@@ -442,7 +469,12 @@ class client :
             client._sock.sendall(c_timestamp.encode() + b'\0')
 
             # Send username
-            client._sock.sendall(client._username.encode() + b'\0')
+            user = client._username
+            if user:
+                # Send username
+                client._sock.sendall(user.encode() + b'\0')
+            else:
+                client._sock.sendall(b'__NO_USER__\0')
 
             # Receive response
             response = int(client.readString())
@@ -450,6 +482,8 @@ class client :
             if response == client.RC.OK.value:
                 print("LIST_USERS OK")
                 n_connections = int(client.readString())
+                if n_connections == 0:
+                    print(client.readString())
                 print("n_connections: " + str(n_connections))
                 for connection in range(n_connections):
                     user_info = client.readString()
@@ -477,10 +511,10 @@ class client :
             return client.RC.ERROR
 
     @staticmethod
-    def  listcontent(user) :
+    def  listcontent(owner) :
         #  Write your code here
         if client.connect_to_server() == client.RC.ERROR:
-            print("Error connecting to server")
+            print("LIST_CONTENT FAIL")
             return client.RC.ERROR
 
         try:
@@ -492,10 +526,15 @@ class client :
             client._sock.sendall(c_timestamp.encode() + b'\0')
 
             # Send user operating
-            client._sock.sendall(client._username.encode() + b'\0')
+            user = client._username
+            if user:
+                # Send username
+                client._sock.sendall(user.encode() + b'\0')
+            else:
+                client._sock.sendall(b'__NO_USER__\0')
 
             # Send owner of the content
-            client._sock.sendall(user.encode() + b'\0')
+            client._sock.sendall(owner.encode() + b'\0')
 
             # Receive response
             response = int(client.readString())
@@ -503,6 +542,8 @@ class client :
             if response == client.RC.OK.value:
                 print("LIST_CONTENT OK")
                 n_files = int(client.readString())
+                if n_files == 0:
+                    print(client.readString())
                 for file in range(n_files):
                     print(client.readString())
             elif response == client.RC.ERROR.value:
@@ -514,7 +555,7 @@ class client :
             else:
                 print("LIST_CONTENT FAIL")
             client._sock.close()
-            return client.RC(response)
+            return response
         except:
             print("Exception list_content: " + str(e))
             if client._sock:
@@ -526,26 +567,34 @@ class client :
         return client.RC.ERROR
 
     @staticmethod
-    def  getfile(user,  remote_FileName,  local_FileName) :
+    def  getfile(owner,  remote_FileName,  local_FileName) :
+        # Send user operating
+        user = client._username
         try:
             # Check if the user is in the list of users
-            if user not in client._list_users.keys():
+            if owner not in client._list_users.keys():
                 if client.connect_to_server() == client.RC.ERROR:
-                    print("Error connecting to server")
+                    print("GET_FILE FAIL")
                     return client.RC.ERROR
                 # SEND GET_FILE command
                 client._sock.sendall(b'GET_FILE\0')
 
-                # Send user operating
-                client._sock.sendall(client._username.encode() + b'\0')
+                if user:
+                    # Send username
+                    client._sock.sendall(user.encode() + b'\0')
+                else:
+                    client._sock.sendall(b'\0')
 
-                print("User not in list of users")
+
                 # Send user owner
-                client._sock.sendall(user.encode() + b'\0')
+                if owner:
+                    # Send username
+                    client._sock.sendall(owner.encode() + b'\0')
+                else:
+                    client._sock.sendall(b'\0')
 
                 # Receive response
                 server_response = int(client.readString())
-                print("Server response: " + str(server_response))
                 if server_response != client.RC.OK.value:
                     print("GET_FILE FAIL")
                     client._sock.close()
@@ -556,8 +605,8 @@ class client :
                 client._sock.close()
 
             else: # User in list of users
-                client_address = client._list_users[user][0]
-                client_port = int(client._list_users[user][1])
+                client_address = client._list_users[owner][0]
+                client_port = int(client._list_users[owner][1])
 
             # Connect to client
             try:
@@ -570,15 +619,18 @@ class client :
                 client._sock.sendall(b'GET_FILE\0')
 
                 # Send user operating
-                client._sock.sendall(client._username.encode() + b'\0')
+                user = client._username
+                if user:
+                    # Send username
+                    client._sock.sendall(user.encode() + b'\0')
+                else:
+                    client._sock.sendall(b'\0')
 
-                print("User not in list of users")
                 # Send user owner
-                client._sock.sendall(user.encode() + b'\0')
+                client._sock.sendall(owner.encode() + b'\0')
 
                 # Receive response
                 server_response = int(client.readString())
-                print("Server response: " + str(server_response))
                 if server_response != client.RC.OK.value:
                     print("GET_FILE FAIL")
                     client._sock.close()
@@ -587,19 +639,17 @@ class client :
                 client_address = client.readString()
                 client_port = int(client.readString())
                 client._sock.close()
-                print("Client address: " + client_address)
-                print("Client port: " + str(client_port))
                 try:
-                    # Connect to the client
+
                     client._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     client._sock.connect((client_address, client_port))
-                    print("Connected to client: " + client_address + " on port: " + str(client_port))
                 except:
                     print("GET_FILE FAIL")
                     client._sock.close()
                     return 2
 
             # Send operation
+
             client._sock.sendall(b'GET_FILE\0')
 
             # Send remote file name

@@ -20,6 +20,9 @@ pthread_cond_t cond_mensaje = PTHREAD_COND_INITIALIZER;
 pthread_attr_t thread_attr;
 int sd;
 
+
+
+
 void print_rpc_servidor(char *string_to_print)
 {
     CLIENT *clnt;
@@ -42,7 +45,12 @@ void print_rpc_servidor(char *string_to_print)
 }
 
 
-
+void send_info_to_rpc(char *username, char *operation, char *c_time_string)
+{
+    char rpc_string[2*BUFFER_SIZE+103];
+    sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
+    print_rpc_servidor(rpc_string);
+}
 
 void send_result(int sc, int res) {
     char res_str[BUFFER_SIZE];
@@ -134,9 +142,14 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
-        char rpc_string[2*BUFFER_SIZE+103];
-        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
-        print_rpc_servidor(rpc_string);
+        send_info_to_rpc(username, operation, c_time_string);
+        if (strcmp(username, "__NO_USER__") == 0) {
+            perror("Error: user does not exist");
+            send_result(sc, 1);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
         res = handle_register(username);
     } else if (strcmp(operation, "UNREGISTER") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
@@ -145,9 +158,14 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
-        char rpc_string[2*BUFFER_SIZE+103];
-        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
-        print_rpc_servidor(rpc_string);
+        send_info_to_rpc(username, operation, c_time_string);
+        if (strcmp(username, "__NO_USER__") == 0) {
+            perror("Error: user does not exist");
+            send_result(sc, 1);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
         res = handle_unregister(username);
     } else if (strcmp(operation, "CONNECT") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
@@ -156,9 +174,14 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
-        char rpc_string[2*BUFFER_SIZE+103];
-        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
-        print_rpc_servidor(rpc_string);
+        send_info_to_rpc(username, operation, c_time_string);
+        if (strcmp(username, "__NO_USER__") == 0) {
+            perror("Error: user does not exist");
+            send_result(sc, 1);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
         char port_str[BUFFER_SIZE];
         if (readLine(sc, port_str, BUFFER_SIZE) < 0) {
             printf("Error en recepción CONNECT\n");
@@ -180,9 +203,14 @@ void *tratar_peticion(void *sc_ptr) {
             close(sc);
             pthread_exit(NULL);
         }
-        char rpc_string[2*BUFFER_SIZE+103];
-        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
-        print_rpc_servidor(rpc_string);
+        send_info_to_rpc(username, operation, c_time_string);
+        if (strcmp(username, "__NO_USER__") == 0) {
+            perror("Error: user does not exist");
+            send_result(sc, 1);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
 
         char fileName[BUFFER_SIZE];
         if (readLine(sc, fileName, BUFFER_SIZE) < 0) {
@@ -201,19 +229,29 @@ void *tratar_peticion(void *sc_ptr) {
         res = handle_publish(username, fileName, description);
 
     } else if (strcmp(operation, "DELETE") == 0) {
+        printf("VOY A LEER DELETE\n");
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
-            printf("Error en recepción PUBLISH\n");
+            printf("Error en recepción DELETE\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 2);
             close(sc);
             pthread_exit(NULL);
         }
-        char rpc_string[2*BUFFER_SIZE+103];
-        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
-        print_rpc_servidor(rpc_string);
+        printf("Username: %s\n", username);
+        send_info_to_rpc(username, operation, c_time_string);
+        printf("Username after rpc: %s\n", username);
+        if (strcmp(username, "__NO_USER__") == 0) {
+            perror("Error: user does not exist");
+            pthread_mutex_unlock(&file_mutex);
+            send_result(sc, 1);
+            close(sc);
+            pthread_exit(NULL);
+        }
 
         char fileName[BUFFER_SIZE];
         if (readLine(sc, fileName, BUFFER_SIZE) < 0) {
-            printf("Error en recepción PUBLISH\n");
+            printf("Error en recepción DELETE\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 2);
             close(sc);
             pthread_exit(NULL);
@@ -222,19 +260,27 @@ void *tratar_peticion(void *sc_ptr) {
     } else if (strcmp(operation, "LIST_USERS") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción LIST_USERS\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 3);
             close(sc);
             pthread_exit(NULL);
         }
-        char rpc_string[2*BUFFER_SIZE+103];
-        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
-        print_rpc_servidor(rpc_string);
+        send_info_to_rpc(username, operation, c_time_string);
+
+        if (strcmp(username, "__NO_USER__") == 0) {
+            perror("Error: user does not exist");
+            pthread_mutex_unlock(&file_mutex);
+            send_result(sc, 1);
+            close(sc);
+            pthread_exit(NULL);
+        }
 
         char user_list_name[MAX_FILEPATH_LENGTH*3];
         sprintf(user_list_name, "%s_users_connected.txt", username);
         FILE *user_list = fopen(user_list_name, "w");
         if (user_list == NULL) {
             perror("Error opening file");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 3);
             close(sc);
             pthread_exit(NULL);
@@ -244,17 +290,26 @@ void *tratar_peticion(void *sc_ptr) {
     } else if (strcmp(operation, "LIST_CONTENT") == 0){
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción LIST_USERS\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 4);
             close(sc);
             pthread_exit(NULL);
         }
-        char rpc_string[2*BUFFER_SIZE+103];
-        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
-        print_rpc_servidor(rpc_string);
+
+        send_info_to_rpc(username, operation, c_time_string);
+
+        if (strcmp(username, "__NO_USER__") == 0) {
+            perror("Error: user does not exist");
+            pthread_mutex_unlock(&file_mutex);
+            send_result(sc, 1);
+            close(sc);
+            pthread_exit(NULL);
+        }
 
 
         if (readLine(sc, owner, BUFFER_SIZE) < 0) {
             printf("Error en recepción LIST_USERS\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 4);
             close(sc);
             pthread_exit(NULL);
@@ -265,6 +320,7 @@ void *tratar_peticion(void *sc_ptr) {
         FILE *user_content = fopen(user_content_name, "w");
         if (user_content == NULL) {
             perror("Error opening file");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 4);
             close(sc);
             pthread_exit(NULL);
@@ -275,25 +331,44 @@ void *tratar_peticion(void *sc_ptr) {
     } else if (strcmp(operation, "DISCONNECT") == 0){
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción DISCONNECT\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 3);
             close(sc);
             pthread_exit(NULL);
         }
-        char rpc_string[2*BUFFER_SIZE+103];
-        sprintf(rpc_string,"%s %s %s",username,operation,c_time_string);
-        print_rpc_servidor(rpc_string);
+
+        send_info_to_rpc(username, operation, c_time_string);
+
+        if (strcmp(username, "__NO_USER__") == 0) {
+            perror("Error: user does not exist");
+            pthread_mutex_unlock(&file_mutex);
+            send_result(sc, 1);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
 
         res = handle_disconnect(username);
     } else if (strcmp(operation, "GET_FILE") == 0){
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción GET_FILE\n");
+            pthread_mutex_unlock(&file_mutex);
+
             send_result(sc, 3);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        if (strcmp(username, "__NO_USER__") == 0) {
+            perror("Error: user does not exist");
+            pthread_mutex_unlock(&file_mutex);
+            send_result(sc, 1);
             close(sc);
             pthread_exit(NULL);
         }
         char owner[BUFFER_SIZE];
         if (readLine(sc, owner, BUFFER_SIZE) < 0) {
             printf("Error en recepción GET_FILE\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 3);
             close(sc);
             pthread_exit(NULL);
@@ -321,19 +396,50 @@ void *tratar_peticion(void *sc_ptr) {
         pthread_mutex_lock(&file_mutex);
         char users_connected_path[MAX_FILEPATH_LENGTH*2];
         sprintf(users_connected_path, "%s_users_connected.txt", username);
+        if (access(users_connected_path, F_OK) == -1) {
+            perror("Error accessing file");
+            pthread_mutex_unlock(&file_mutex);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
+
         FILE *user_list = fopen(users_connected_path, "r"); // TODO change name file to avoid race condition
         printf("Sending users connected\n");
         if (user_list == NULL) {
             perror("Error opening file");
+            pthread_mutex_unlock(&file_mutex);
             close(sc);
 
             pthread_exit(NULL);
         }
+        // If file is empty, send empty message
+        fseek(user_list, 0, SEEK_END);
+        printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
+        if (ftell(user_list) == 0) {
+            printf("BBBBBBBBBBBBBBBBBBB\n");
+            if (writeLine(sc, "---------------") < 0) {
+                perror("Error sending result\n");
+                pthread_mutex_unlock(&file_mutex);
+                close(sc);
+                pthread_exit(NULL);
+            }
+            fclose(user_list);
+            pthread_mutex_unlock(&file_mutex);
+            close(sc);
+            pthread_exit(NULL);
+        }
+
+        // Devolver el puntero al inicio del archivo
+        fseek(user_list, 0, SEEK_SET);
+
         char line[BUFFER_SIZE];
         while (fgets(line, sizeof(line), user_list)) {
             printf("Sending: %s\n", line);
             if (writeLine(sc, line) < 0) {
                 perror("Error sending result\n");
+                pthread_mutex_unlock(&file_mutex);
+                close(sc);
                 pthread_exit(NULL);
             }
         }
@@ -342,17 +448,17 @@ void *tratar_peticion(void *sc_ptr) {
         // Delete file
         if (remove(users_connected_path) != 0) {
             perror("Error deleting file");
+            pthread_mutex_unlock(&file_mutex);
             close(sc);
             pthread_exit(NULL);
         }
         pthread_mutex_unlock(&file_mutex);
+        printf("TODO BIEN ENVIADo\n");
     }
     else if (strcmp(operation, "LIST_CONTENT") == 0){
         printf("Socket: %d\n", sc);
         send_result(sc, n_content);
-        printf("AAAAAAAa\n");
         pthread_mutex_lock(&file_mutex);
-        printf("BBBBBBBBBBBBBBB\n");
 
         char user_content_name[MAX_FILEPATH_LENGTH*3];
         sprintf(user_content_name, "%s%s_content.txt", username, owner);
@@ -360,14 +466,35 @@ void *tratar_peticion(void *sc_ptr) {
         printf("Sending user content\n");
         if (user_content == NULL) {
             perror("Error opening file");
+            pthread_mutex_unlock(&file_mutex);
             close(sc);
             pthread_exit(NULL);
         }
+
+        // If file is empty, send empty message
+        fseek(user_content, 0, SEEK_END);
+        if (ftell(user_content) == 0) {
+            printf("File is empty\n");
+            if (writeLine(sc, "---------------") < 0) {
+                perror("Error sending result\n");
+                pthread_mutex_unlock(&file_mutex);
+                close(sc);
+                pthread_exit(NULL);
+            }
+            fclose(user_content);
+            pthread_mutex_unlock(&file_mutex);
+            close(sc);
+            pthread_exit(NULL);
+        }
+        // Devolver el puntero al inicio del archivo
+        fseek(user_content, 0, SEEK_SET);
+
         char line[BUFFER_SIZE];
         while (fgets(line, sizeof(line), user_content)) {
-            printf("Sending: %s\n", line);
             if (writeLine(sc, line) < 0) {
                 perror("Error sending result\n");
+                pthread_mutex_unlock(&file_mutex);
+                close(sc);
                 pthread_exit(NULL);
             }
         }
@@ -376,12 +503,11 @@ void *tratar_peticion(void *sc_ptr) {
         // Delete file
         if (remove(user_content_name) != 0) {
             perror("Error deleting file");
+            pthread_mutex_unlock(&file_mutex);
             close(sc);
             pthread_exit(NULL);
         }
-        printf("CCCCCCCCCCCCCCCCCCcc\n");
         pthread_mutex_unlock(&file_mutex);
-        printf("DDDDDDDDDDDDDDDDDDDDdddd\n");
     }
     else if (strcmp(operation, "GET_FILE") == 0){
         // Send client address and port
@@ -390,6 +516,7 @@ void *tratar_peticion(void *sc_ptr) {
         if (writeLine(sc, client_address) < 0) {
             perror("Error sending result\n");
             send_result(sc, 2);
+            close(sc);
             pthread_exit(NULL);
         }
         printf("Port: %d\n", client_port);
@@ -398,6 +525,7 @@ void *tratar_peticion(void *sc_ptr) {
         if (writeLine(sc, port_str) < 0) {
             perror("Error sending result\n");
             send_result(sc, 2);
+            close(sc);
             pthread_exit(NULL);
         }
     }
