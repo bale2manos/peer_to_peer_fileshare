@@ -42,7 +42,7 @@ int serverAccept(int sd) {
     int sc;
     struct sockaddr_in client_addr;
     socklen_t size;
-    printf("s >");
+    //printf("s >");
     // Flush the buffer
     fflush(stdout);
 

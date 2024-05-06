@@ -33,7 +33,7 @@ except FileNotFoundError:
     pass
 
 print("Borrando base de datos")
-time.sleep(2)  # Para ver la base de datos vacía
+time.sleep(1)  # Para ver la base de datos vacía
 
 # Start the client shells
 processes = []
