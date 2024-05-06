@@ -29,7 +29,6 @@ int handle_register(char *username) {
         return 2;
     }
 
-    printf("User registered successfully.\n");
 
     return 0;
 }
@@ -101,7 +100,6 @@ int handle_unregister(char *username) {
         perror("Error unregistering user");
         return 2;
     }
-    printf("User unregistered successfully.\n");
 
     return 0;
 }
@@ -192,7 +190,6 @@ int handle_publish(char *userName, char *fileName, char *description) {
     // Cerrar el archivo
     fclose(new_file);
 
-    printf("Archivo creado exitosamente: %s\n", new_file_path);
     return 0;
 
 
@@ -201,8 +198,6 @@ int handle_publish(char *userName, char *fileName, char *description) {
 int handle_delete(char *username, char *filename) {
     char user[MAX_FILEPATH_LENGTH];
     snprintf(user, sizeof(user), "%s%s", DATA_DIRECTORY, username);
-
-    printf("la ruta es: %s", user);
 
     // If the directory doesn't exist, return an error, as the username does not exist
     if (access(user, F_OK) == -1) {
@@ -234,7 +229,6 @@ int handle_delete(char *username, char *filename) {
         return 4;
     }
 
-    printf("Archivo '%s' eliminado correctamente.\n", filename);
     return 0;
 
 }
@@ -258,7 +252,6 @@ int write_connection(const char *address, int port, FILE *file) {
     }
 
     fclose(file);
-    printf("User connected successfully.\n");
     return 0;
 }
 
@@ -431,7 +424,6 @@ int handle_disconnect(char *user) {
         return 3;
     }
 
-    printf("User disconnected successfully.\n");
     return 0;
 }
 
@@ -466,7 +458,6 @@ int handle_get_file(char *username, char *owner, char *address, int *port) {
         fclose(connect_file);
         return 2;
     }
-    printf("User connected to %s:%d\n", address, *port);
 
     fclose(connect_file);
     return 0;

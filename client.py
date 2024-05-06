@@ -246,6 +246,9 @@ class client:
 
             if client._listening_socket:
                 client._listening_thread.start()  # TODO inicia el hilo aunque ya existiera o aunque no este registrado
+            else:
+                print("CONNECT FAIL")
+                return client.RC.ERROR
 
             # Establish a connection with the server
             res = client.connect_to_server()

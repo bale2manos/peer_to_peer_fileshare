@@ -42,8 +42,9 @@ int serverAccept(int sd) {
     int sc;
     struct sockaddr_in client_addr;
     socklen_t size;
-
-    printf("esperando conexion...\n");
+    printf("s >");
+    // Flush the buffer
+    fflush(stdout);
 
     size = sizeof(client_addr);
     sc = accept(sd, (struct sockaddr *) &client_addr, (socklen_t * ) & size);
@@ -52,8 +53,6 @@ int serverAccept(int sd) {
         return -1;
     }
 
-    printf("conexión aceptada de IP: %s y puerto: %d\n",
-           inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
     return sc;
 }
@@ -112,10 +111,7 @@ int sendMessage(int socket, char *buffer, int len) {
         }
         l = l - r;
         buffer = buffer + r;
-        printf("Enviados %d bytes\n", r);
-        printf("Faltan enviar %d bytes\n", l);
     } while ((l > 0) && (r >= 0));
-    printf("TODO BIEN\n");
     return 0;
 }
 
