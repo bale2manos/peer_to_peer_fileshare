@@ -132,24 +132,31 @@ void *tratar_peticion(void *sc_ptr) {
 
     pthread_mutex_lock(&file_mutex);
     if (strcmp(operation, "REGISTER") == 0) {
+        printf("LEO REGISTER\n");
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción REGISTER\n");
+            pthread_mutex_unlock(&file_mutex);
+
             send_result(sc, 2);
             close(sc);
             pthread_exit(NULL);
         }
+        printf("NO SE LO HE ENVIADO A LA RPC\n");
         send_info_to_rpc(username, operation, c_time_string);
         if (strcmp(username, "__NO_USER__") == 0) {
             perror("Error: user does not exist");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 1);
             close(sc);
             pthread_exit(NULL);
         }
-
+        printf("LLEGO AQUI\n");
         res = handle_register(username);
+        printf("Result: %d\n", res);
     } else if (strcmp(operation, "UNREGISTER") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción UNREGISTER\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 2);
             close(sc);
             pthread_exit(NULL);
@@ -157,6 +164,8 @@ void *tratar_peticion(void *sc_ptr) {
         send_info_to_rpc(username, operation, c_time_string);
         if (strcmp(username, "__NO_USER__") == 0) {
             perror("Error: user does not exist");
+            pthread_mutex_unlock(&file_mutex);
+
             send_result(sc, 1);
             close(sc);
             pthread_exit(NULL);
@@ -166,6 +175,8 @@ void *tratar_peticion(void *sc_ptr) {
     } else if (strcmp(operation, "CONNECT") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción CONNECT\n");
+            pthread_mutex_unlock(&file_mutex);
+
             send_result(sc, 2);
             close(sc);
             pthread_exit(NULL);
@@ -173,6 +184,8 @@ void *tratar_peticion(void *sc_ptr) {
         send_info_to_rpc(username, operation, c_time_string);
         if (strcmp(username, "__NO_USER__") == 0) {
             perror("Error: user does not exist");
+            pthread_mutex_unlock(&file_mutex);
+
             send_result(sc, 1);
             close(sc);
             pthread_exit(NULL);
@@ -181,12 +194,15 @@ void *tratar_peticion(void *sc_ptr) {
         char port_str[BUFFER_SIZE];
         if (readLine(sc, port_str, BUFFER_SIZE) < 0) {
             printf("Error en recepción CONNECT\n");
+            pthread_mutex_unlock(&file_mutex);
+
             send_result(sc, 2);
             close(sc);
             pthread_exit(NULL);
         }
         char client_address[INET_ADDRSTRLEN];
         if (get_client_address(sc, client_address, sizeof(client_address)) < 0) {
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 3);
             close(sc);
             pthread_exit(NULL);
@@ -195,6 +211,7 @@ void *tratar_peticion(void *sc_ptr) {
     } else if (strcmp(operation, "PUBLISH") == 0) {
         if (readLine(sc, username, BUFFER_SIZE) < 0) {
             printf("Error en recepción PUBLISH\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 2);
             close(sc);
             pthread_exit(NULL);
@@ -202,15 +219,18 @@ void *tratar_peticion(void *sc_ptr) {
         send_info_to_rpc(username, operation, c_time_string);
         if (strcmp(username, "__NO_USER__") == 0) {
             perror("Error: user does not exist");
+            pthread_mutex_unlock(&file_mutex);
+
             send_result(sc, 1);
             close(sc);
             pthread_exit(NULL);
         }
-
+        printf("PUBLISH CON USERNAME: %s\n", username);
 
         char fileName[BUFFER_SIZE];
         if (readLine(sc, fileName, BUFFER_SIZE) < 0) {
             printf("Error en recepción PUBLISH\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 2);
             close(sc);
             pthread_exit(NULL);
@@ -218,8 +238,10 @@ void *tratar_peticion(void *sc_ptr) {
         char description[BUFFER_SIZE];
         if (readLine(sc, description, BUFFER_SIZE) < 0) {
             printf("Error en recepción PUBLISH\n");
+            pthread_mutex_unlock(&file_mutex);
             send_result(sc, 2);
             close(sc);
+
             pthread_exit(NULL);
         }
         res = handle_publish(username, fileName, description);
