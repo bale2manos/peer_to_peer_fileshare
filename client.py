@@ -481,13 +481,17 @@ class client:
                     print(client.readString())
                 print("n_connections: " + str(n_connections))
                 for connection in range(n_connections):
-                    user_info = client.readString()
-                    print("\t%s" % user_info)
-                    user_info = user_info.split(' ')
+                    user_name = client.readString()
+                    user_ip = client.readString()
+                    user_port = client.readString()
+
+                    print("\t" + user_name[:-1] + " " + user_ip[:-1] + " " + user_port[:-1])
+
+                    """user_info = user_info.split(' ')
                     user_name = user_info[0]
                     user_ip = user_info[1]
                     # from the port remove the las '\n' character
-                    user_port = user_info[2][:-1]
+                    user_port = user_info[2][:-1]"""
                     client._list_users[user_name] = (user_ip, user_port)
             elif response == client.RC.ERROR.value:
                 print("LIST_USERS FAIL, USER DOES NOT EXIST")

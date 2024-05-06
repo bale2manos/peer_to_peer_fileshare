@@ -308,7 +308,7 @@ int handle_list_users(char *username, int *n_connections, FILE *user_list) {
                 }
 
                 // Write connection info to user_list file
-                fprintf(user_list, "%s %s %d\n", entry->d_name, address, port);
+                fprintf(user_list, "%s\n%s\n%d\n", entry->d_name, address, port);
                 fclose(connect_file);
 
                 (*n_connections)++;
