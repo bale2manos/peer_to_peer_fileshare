@@ -357,7 +357,7 @@ int handle_list_content(char *username, char *owner, int *num_content, FILE *con
     char owner_connect[MAX_FILEPATH_LENGTH];
     snprintf(owner_connect, sizeof(owner_connect), "%s%s/connect", DATA_DIRECTORY, owner);
     if (access(owner_connect, F_OK) == -1) {
-        printf("Owner is not connected\n");
+        perror("Owner is not connected\n");
         return 0;
     }
 

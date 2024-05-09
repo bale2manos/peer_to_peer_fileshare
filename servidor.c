@@ -367,6 +367,9 @@ void *tratar_peticion(void *sc_ptr) {
                 exit_error(sc, "Error sending result");
             }
             fclose(user_list);
+            if (remove(users_connected_path) != 0) {
+                perror("Error deleting file");
+            }
             pthread_mutex_unlock(&file_mutex);
             close(sc);
             printf("s > ");
@@ -413,6 +416,9 @@ void *tratar_peticion(void *sc_ptr) {
                 exit_error(sc, "Error sending result");
             }
             fclose(user_content);
+            if (remove(user_content_name) != 0) {
+                perror("Error deleting file");
+            }
             pthread_mutex_unlock(&file_mutex);
             exit_error(sc, "Error: file is empty");
         }
@@ -421,6 +427,10 @@ void *tratar_peticion(void *sc_ptr) {
 
         char line[BUFFER_SIZE];
         while (fgets(line, sizeof(line), user_content)) {
+            if (line[0] == '\n') {
+                continue;
+            }
+
             if (writeLine(sc, line) < 0) {
                 pthread_mutex_unlock(&file_mutex);
                 exit_error(sc, "Error sending result");

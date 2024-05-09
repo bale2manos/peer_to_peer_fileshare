@@ -111,8 +111,7 @@ class client:
                         if (msg == b'\0'):
                             break
                         filename += msg.decode()
-                    user_path = '/database/' + client._username
-                    file_path = user_path + '/files/' + filename
+                    file_path = '/local_storage/' + client._username + '/' + filename
                     current_path = os.getcwd()
                     path = current_path + file_path
                     if not os.path.isfile(path):
@@ -542,6 +541,7 @@ class client:
                 n_files = int(client.readString())
                 if n_files == 0:
                     print(client.readString())
+                print("n_files: " + str(n_files))
                 for file in range(n_files):
                     print(client.readString())
             elif response == client.RC.ERROR.value:
@@ -656,7 +656,7 @@ class client:
             if client_response == client.RC.OK.value:
                 print("GET_FILE OK")
                 # Open the file
-                local_filePath = os.getcwd() + '/database/' + client._username + '/files/' + local_FileName
+                local_filePath = os.getcwd() + '/local_storage/' + client._username + '/' + local_FileName
                 with open(local_filePath, 'wb') as file:
                     # Read the file
                     data = client.readString()

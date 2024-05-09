@@ -1,7 +1,7 @@
 import subprocess
 import time
 import threading
-
+import os
 
 # Function to send instructions to the client shell and print them
 def send_instruction(instruction, process):
@@ -26,6 +26,11 @@ def print_errors(process):
 # Remove all the files and subfolders of ../database
 subprocess.run(['rm', '-rf', './database'])
 subprocess.run(['mkdir', './database'])
+
+
+# Remove all the files and subfolders of ../database
+subprocess.run(['rm', '-rf', './local_storage'])
+subprocess.run(['mkdir', './local_storage'])
 # Use try-except to suppress error message
 try:
     subprocess.run(['rm', './current_username.txt'], stderr=subprocess.DEVNULL)
@@ -64,11 +69,23 @@ half_processes = n_processes / 2
 for i in range(n_processes):
     # Define instructions for each process, do REGISTER usuario + n_process
     user = "usuario" + str(i)
+    # Create the directory path
+    directory_path = os.path.join(os.getcwd(), 'local_storage', user)
+
+    # Create the directory if it doesn't exist
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+
+    # Crea fichero con el contenido en local_storage
+    path = os.getcwd() + '/local_storage/' + user + '/' + 'title'+ str(i)
+    with open(path, 'w') as file:
+        file.write("contenido del fichero " + str(i) + " de usuario " + str(i) + "\n")
+
     if (i < half_processes):
         neighbor = int(i + half_processes)
         process_instr = ["REGISTER " + user,
                          "CONNECT " + user,
-                         "PUBLISH title" + str(i) + " content of the file" + str(i),
+                         "PUBLISH title" + str(i) + "descr of title" + str(i),
                          "LIST_USERS",
                          "GET_FILE usuario" + str(neighbor) + " title" + str(neighbor) + " copia" + str(neighbor),
                          "QUIT"]
@@ -76,7 +93,7 @@ for i in range(n_processes):
         neighbor = int(i - half_processes)
         process_instr = ["REGISTER " + user,
                          "CONNECT " + user,
-                         "PUBLISH title" + str(i) + " content of the file" + str(i),
+                         "PUBLISH title" + str(i) + "descr of title" + str(i),
                          "LIST_CONTENT usuario" + str(neighbor),
                          "GET_FILE usuario" + str(neighbor) + " title" + str(neighbor) + " copia" + str(neighbor),
                          "QUIT"]
