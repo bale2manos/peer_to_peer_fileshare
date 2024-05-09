@@ -33,6 +33,10 @@ try:
 except FileNotFoundError:
     pass
 
+# Create file called current_username.txt and write inside user_random
+with open('current_username.txt', 'w') as file:
+    file.write('usuario1')
+
 # Start the client shells
 processes = []
 output_threads = []
@@ -57,7 +61,9 @@ time.sleep(1)  # Adjust this delay according to your project's startup time
 
 # Define instructions with delays
 instructions = [
-    ["DISCONNECT usuario2", "QUIT"]
+    ["REGISTER usuario1", "CONNECT usuario1", "PUBLISH title1 descr1", "PUBLISH title2 descr2",
+     "PUBLISH title3 descr3", "PUBLISH title4 descr4", "PUBLISH title5 descr5", "PUBLISH title6 descr6",
+     "LIST_CONTENT usuario1", "QUIT"]
 ]
 
 # Send instructions with a delay of 3 seconds between each
