@@ -24,12 +24,6 @@ class client:
     _conectado = True
     # _username is stored in the file in the same directory called current_username.txt
     _username = None
-    if _username is None:
-        try:
-            with open("current_username.txt", "r") as file:
-                _username = file.read()
-        except:
-            _username = None
     _list_users = {}
 
     # ******************** METHODS *******************
@@ -279,8 +273,6 @@ class client:
                 print("CONNECT OK")
                 # We store the name of the user in the client
                 client._username = user
-                with open("current_username.txt", "w") as file:
-                    file.write(user)
             elif response == client.RC.ERROR.value:
                 print("CONNECT FAIL, USER DOES NOT EXIST")
                 if client._listening_socket:
@@ -659,10 +651,14 @@ class client:
                 # Open the file
                 local_filePath = os.getcwd() + '/local_storage/' + client._username + '/' + local_FileName
                 with open(local_filePath, 'wb') as file:
-                    # Read the file
-                    data = client.readString()
-                    # Write the file
-                    file.write(data.encode())
+                    # Read the file data from the client's socket
+                    while True:
+                        data = client._sock.recv(1024)
+                        # Check for end of file
+                        if not data:
+                            break
+                        # Write the received data to the local file
+                        file.write(data)
             elif client_response == client.RC.ERROR.value:
                 print("GET_FILE FAIL / FILE NOT EXIST")
             else:
