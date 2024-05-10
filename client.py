@@ -232,11 +232,12 @@ class client:
             # TODO logica y permisos de que usuario se conecta
 
             # Obtain a free port
-            listening_port = client.get_free_port()  # TODO revisar si es necesario
+#            listening_port = client.get_free_port()  # TODO revisar si es necesario
 
             # Create a new socket
             client._listening_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+            client._listening_socket.bind(('localhost', 0))
             # Create a new thread to listen for incoming connections in that socket
             client._conectado = True
             client._listening_thread = threading.Thread(target=client.listen_for_connections,
