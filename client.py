@@ -22,7 +22,6 @@ class client:
     _listening_socket = None
     _listening_thread = None
     _conectado = True
-    # _username is stored in the file in the same directory called current_username.txt
     _username = None
     _list_users = {}
 
@@ -114,7 +113,6 @@ class client:
                         connection.sendall(data_to_send)
                         continue
                     data_to_send = b'0\0'
-                    print("Sending file")
                     connection.sendall(data_to_send)
 
                     client.send_file(connection, path)
@@ -139,7 +137,7 @@ class client:
                 while data:
                     connection.send(data)
                     data = file.read(1024)
-                connection.send(b'\0')
+                #connection.send(b'\0')
         except Exception as e:
             print("Exception send_file " + str(e))
 

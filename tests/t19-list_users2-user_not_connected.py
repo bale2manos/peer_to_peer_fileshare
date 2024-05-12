@@ -33,9 +33,6 @@ try:
 except FileNotFoundError:
     pass
 
-# Create file called current_username.txt and write inside user_random
-with open('current_username.txt', 'w') as file:
-    file.write('usuario1')
 
 # Start the client shells
 processes = []
@@ -61,7 +58,7 @@ time.sleep(1)  # Adjust this delay according to your project's startup time
 
 # Define instructions with delays
 instructions = [
-    ["REGISTER usuario1", "LIST_USERS", "QUIT"]
+    ["REGISTER usuario1", "CONNECT usuario1", "DISCONNECT usuario1","LIST_USERS", "QUIT"]
 ]
 
 # Send instructions with a delay of 3 seconds between each

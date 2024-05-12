@@ -60,7 +60,7 @@ time.sleep(1)  # Adjust this delay according to your project's startup time
 
 # Define instructions with delays
 instructions = [
-    ["REGISTER usuario1", "DISCONNECT usuario1", "QUIT"]
+    ["REGISTER usuario1", "CONNECT usuario1", "DISCONNECT usuario1","DISCONNECT usuario1", "QUIT"]
 ]
 
 # Send instructions with a delay of 3 seconds between each

@@ -45,7 +45,7 @@ processes = []
 output_threads = []
 error_threads = []
 correct_processes_calls = ['python3', 'client.py', '-s', 'localhost', '-p', '4500']
-n_processes = 100
+n_processes = 300
 
 for _ in range(n_processes):
     process = subprocess.Popen(correct_processes_calls, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
